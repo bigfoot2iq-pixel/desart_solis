@@ -58,21 +58,25 @@ app/
 public/brand/    logo lockups, product cutouts, editorial photography
 sanity/          client, live cache, GROQ queries
 studio/          Sanity Studio (schema types, structure)
-scripts/         one-off content migrations
+scripts/         content migrations + the hero image builder
 ```
 
 ## Adding a product
 
 1. Upload a transparent cutout (PNG/WebP) as the product image in Studio.
 2. Create the product document: set `name`, `slug`, `price`, `size`, `category`, `availability`.
-3. Optionally set `badge` (e.g. `Nouveau`) — it renders as a pill on the product card and the card in the hero.
+3. Optionally set `badge` (e.g. `Nouveau`) — it renders as a pill on the product card.
 4. Add the slug to a `pack` if it belongs to a bundle.
+5. Re-render the hero family shot so the new product appears there too:
+
+   ```bash
+   python scripts/build-hero.py   # needs Python 3 + Pillow + numpy
+   ```
 
 Product photos are displayed with `object-contain` on a warm sand panel, so a transparent
 background is required. Editorial photography (used in the story section) lives in `public/brand/`.
 
 ## Design system
-
 Tokens live in `app/globals.css`:
 
 - **Colours** — `cream`, `sand`, `forest`, `gold`, `ink` (see `public/brand/branding-board.webp`)

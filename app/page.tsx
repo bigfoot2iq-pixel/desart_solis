@@ -27,7 +27,7 @@ export default async function Home() {
       <AnnouncementBar text={settings.announcement} />
       <Header />
       <main>
-        <Hero products={products} />
+        <Hero />
         <Promises />
         <Products products={products} />
         <Ritual />
@@ -108,12 +108,12 @@ function Header() {
 
 /* ——— Hero ——— */
 
-function Hero({ products }: { products: Product[] }) {
+function Hero() {
   return (
     <section id="hero" className="relative overflow-hidden px-4 pb-16 pt-14 sm:px-8 lg:pb-24 lg:pt-20">
       {/* Moorish arch — the brand's core motif, kept as a whisper */}
       <div
-        className="pointer-events-none absolute left-1/2 top-0 hidden h-[52rem] w-[54rem] -translate-x-1/2 rounded-t-full border border-forest/10 lg:block"
+        className="pointer-events-none absolute left-1/2 top-0 hidden h-[30rem] w-[50rem] -translate-x-1/2 rounded-t-full border-x border-t border-forest/10 lg:block"
         aria-hidden
       />
 
@@ -144,18 +144,17 @@ function Hero({ products }: { products: Product[] }) {
           </a>
         </div>
 
-        <dl className="mx-auto mt-12 grid max-w-lg grid-cols-3 border-t border-forest/15 pt-6">
-          {[
-            [String(products.length || 4), "soins essentiels"],
-            ["Argan", "du Maroc"],
-            ["COD", "paiement livraison"],
-          ].map(([k, v]) => (
-            <div key={v}>
-              <dt className="font-serif text-3xl font-light text-forest sm:text-4xl">{k}</dt>
-              <dd className="mt-1.5 text-[0.62rem] uppercase tracking-[0.16em] text-ink/65">{v}</dd>
-            </div>
-          ))}
-        </dl>
+        {/* The range, shot as one family */}
+        <div className="relative mt-12 aspect-[16/10] overflow-hidden rounded-[1.75rem] bg-sand-warm">
+          <Image
+            src="/brand/hero-range.webp"
+            alt="Les quatre soins Desart Solis : Face Wash Miel & B5, Gommage Visage, Gel Douche Caramel et Sérum Cheveux & Barbe"
+            fill
+            sizes="(min-width: 768px) 48rem, 92vw"
+            className="object-cover"
+            preload
+          />
+        </div>
       </div>
     </section>
   );
