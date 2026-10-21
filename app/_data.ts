@@ -40,29 +40,6 @@ export const ritual = [
   },
 ];
 
-export const ingredients = [
-  {
-    name: "Huile d’argan",
-    origin: "Maroc",
-    text: "Le cœur de chaque formule. Riche en vitamine E et acides gras, elle nourrit et protège.",
-  },
-  {
-    name: "Miel",
-    origin: "Naturel",
-    text: "Apaisant et hydratant, il aide la peau à retenir son eau.",
-  },
-  {
-    name: "Pro-vitamine B5",
-    origin: "Panthénol",
-    text: "Elle adoucit, calme les rougeurs et renforce le confort cutané.",
-  },
-  {
-    name: "Kératine & protéine végétale",
-    origin: "Fibre",
-    text: "Gaine la fibre capillaire, dompte les frisottis et lisse la barbe.",
-  },
-];
-
 /** Trust bar under the hero. */
 export const promises = [
   { label: "Huile d’argan du Maroc", note: "Actif signature" },
@@ -72,9 +49,4 @@ export const promises = [
 ];
 
 /** Brand pillars shown in the story section. */
-export const values = [
-  { title: "Douceur", text: "Des textures qui glissent, jamais de tiraillements." },
-  { title: "Authenticité", text: "Des actifs simples, lisibles, sans jargon." },
-  { title: "Transparence", text: "Ce qu’il y a dans le flacon, et rien d’autre." },
-  { title: "Proximité", text: "Un humain au bout du message, du premier au dernier." },
-];
+export const values = ["Douceur", "Authenticité", "Transparence", "Proximité"];

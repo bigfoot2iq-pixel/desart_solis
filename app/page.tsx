@@ -4,14 +4,13 @@ import { CartIndicator } from "./_components/cart-indicator";
 import { MobileNav, type NavItem } from "./_components/mobile-nav";
 import { OrderBuilder } from "./_components/order-builder";
 import { ReviewsWidget } from "./_components/reviews";
-import { formatDh, ingredients, promises, ritual, values, whatsappLink } from "./_data";
+import { promises, ritual, values, whatsappLink } from "./_data";
 import { getHomeContent } from "./_lib/catalog";
 import type { Faq as FaqItem, Product, Review, Settings } from "./_lib/types";
 
 const nav: NavItem[] = [
   { href: "#produits", label: "Produits" },
   { href: "#rituel", label: "Rituel" },
-  { href: "#ingredients", label: "Ingrédients" },
   { href: "#histoire", label: "Histoire" },
   { href: "#avis", label: "Avis" },
   { href: "#faq", label: "FAQ" },
@@ -32,8 +31,6 @@ export default async function Home() {
         <Promises />
         <Products products={products} />
         <Ritual />
-        <Manifesto />
-        <Ingredients />
         <Story />
         <Reviews reviews={reviews} products={products} whatsappNumber={settings.whatsappNumber} />
         <Order />
@@ -112,83 +109,53 @@ function Header() {
 /* ——— Hero ——— */
 
 function Hero({ products }: { products: Product[] }) {
-  const featured = products.find((p) => p.badge) ?? products[0];
-
   return (
-    <section id="hero" className="relative overflow-hidden">
-      <div className="grid lg:grid-cols-2">
-        {/* Copy */}
-        <div className="flex items-center px-4 py-16 sm:px-8 sm:py-20 lg:min-h-[42rem] lg:py-24 lg:pl-[max(2rem,calc((100vw-80rem)/2+2rem))] lg:pr-16">
-          <div className="max-w-xl">
-            <p className="eyebrow text-gold-deep">Skin · Hair · Care</p>
-            <h1 className="display mt-7 text-[clamp(2.6rem,6.2vw,4.5rem)] text-forest">
-              L’éclat du désert,
-              <br />
-              <em className="text-foil font-normal">dans chaque geste.</em>
-            </h1>
-            <p className="mt-7 max-w-md text-[0.95rem] leading-relaxed text-ink/65">
-              Quatre soins essentiels pour le visage, le corps, les cheveux et la barbe, formulés autour de l’huile
-              d’argan du Maroc. Peu de produits, bien choisis.
-            </p>
+    <section id="hero" className="relative overflow-hidden px-4 pb-16 pt-14 sm:px-8 lg:pb-24 lg:pt-20">
+      {/* Moorish arch — the brand's core motif, kept as a whisper */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-0 hidden h-[52rem] w-[54rem] -translate-x-1/2 rounded-t-full border border-forest/10 lg:block"
+        aria-hidden
+      />
 
-            <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-7">
-              <a
-                href="#produits"
-                className="eyebrow rounded-full bg-forest px-8 py-4 text-center text-cream transition-colors duration-300 hover:bg-forest-soft"
-              >
-                Découvrir la gamme
-              </a>
-              <a href="#rituel" className="eyebrow group inline-flex items-center justify-center gap-3 py-4 text-forest">
-                Le rituel
-                <span className="h-px w-8 bg-gold transition-all duration-500 ease-soft group-hover:w-14" />
-              </a>
-            </div>
+      <div className="relative mx-auto max-w-3xl text-center">
+        <p className="eyebrow text-gold-deep">Skin · Hair · Care</p>
 
-            <dl className="mt-14 grid max-w-lg grid-cols-3 border-t border-forest/15 pt-7">
-              {[
-                [String(products.length || 4), "soins essentiels"],
-                ["Argan", "du Maroc"],
-                ["COD", "paiement livraison"],
-              ].map(([k, v]) => (
-                <div key={v}>
-                  <dt className="font-serif text-3xl font-light text-forest sm:text-4xl">{k}</dt>
-                  <dd className="mt-1.5 text-[0.62rem] uppercase tracking-[0.16em] text-ink/65">{v}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
+        <h1 className="display mt-6 text-[clamp(2.6rem,6.4vw,4.75rem)] text-forest">
+          L’éclat du désert,
+          <br />
+          <em className="text-foil font-normal">dans chaque geste.</em>
+        </h1>
+
+        <p className="mx-auto mt-6 max-w-lg text-[0.95rem] leading-relaxed text-ink/65">
+          Quatre soins essentiels pour le visage, le corps, les cheveux et la barbe, formulés autour de l’huile d’argan
+          du Maroc. Peu de produits, bien choisis.
+        </p>
+
+        <div className="mt-9 flex flex-col items-center justify-center gap-2 sm:flex-row sm:gap-7">
+          <a
+            href="#produits"
+            className="eyebrow rounded-full bg-forest px-8 py-4 text-center text-cream transition-colors duration-300 hover:bg-forest-soft"
+          >
+            Découvrir la gamme
+          </a>
+          <a href="#rituel" className="eyebrow group inline-flex items-center justify-center gap-3 py-4 text-forest">
+            Le rituel
+            <span className="h-px w-8 bg-gold transition-all duration-500 ease-soft group-hover:w-14" />
+          </a>
         </div>
 
-        {/* Editorial panel */}
-        <div className="grain relative isolate overflow-hidden bg-forest">
-          <div className="absolute -left-24 top-1/4 size-[26rem] rounded-full bg-gold/10 blur-3xl" aria-hidden />
-          <div className="relative mx-auto flex h-full max-w-2xl flex-col justify-center px-8 py-16 sm:px-12 lg:py-20">
-            <div className="relative mx-auto w-full max-w-[26rem]">
-              <div className="arch relative aspect-[3/4] overflow-hidden ring-1 ring-gold/25">
-                <Image
-                  src="/brand/editorial-gel-douche.webp"
-                  alt="Flacon Desart Gel Douche Caramel tenu sous une douche"
-                  fill
-                  sizes="(min-width: 1024px) 26rem, 90vw"
-                  className="object-cover"
-                  preload
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-forest/70 via-forest/10 to-transparent" />
-              </div>
-
-              {featured && (
-                <div className="absolute -bottom-6 left-4 right-4 rounded-2xl border border-forest/10 bg-cream-soft/95 p-5 shadow-[0_24px_50px_-24px_rgba(26,37,30,0.6)] backdrop-blur sm:-left-6 sm:right-auto sm:w-[17rem]">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="eyebrow text-gold-deep">{featured.badge ?? "En vedette"}</p>
-                    <p className="font-serif text-lg nums text-forest">{formatDh(featured.price)}</p>
-                  </div>
-                  <p className="mt-2 font-serif text-2xl leading-tight text-forest">{featured.name}</p>
-                  <p className="mt-1 text-xs text-ink/65">{featured.size}</p>
-                </div>
-              )}
+        <dl className="mx-auto mt-12 grid max-w-lg grid-cols-3 border-t border-forest/15 pt-6">
+          {[
+            [String(products.length || 4), "soins essentiels"],
+            ["Argan", "du Maroc"],
+            ["COD", "paiement livraison"],
+          ].map(([k, v]) => (
+            <div key={v}>
+              <dt className="font-serif text-3xl font-light text-forest sm:text-4xl">{k}</dt>
+              <dd className="mt-1.5 text-[0.62rem] uppercase tracking-[0.16em] text-ink/65">{v}</dd>
             </div>
-          </div>
-        </div>
+          ))}
+        </dl>
       </div>
     </section>
   );
@@ -207,7 +174,7 @@ function Promises() {
     <section id="trust" className="border-y border-forest/10 bg-cream-soft">
       <ul className="mx-auto grid max-w-7xl sm:grid-cols-2 lg:grid-cols-4">
         {promises.map((item, i) => (
-          <li key={item.label} className={`flex items-start gap-4 px-6 py-7 sm:px-8 lg:py-8 ${rules[i]}`}>
+          <li key={item.label} className={`flex items-start gap-4 px-6 py-6 sm:px-8 lg:py-6 ${rules[i]}`}>
             <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full border border-gold/50 text-gold-deep">
               <PromiseIcon index={i} className="size-4" />
             </span>
@@ -226,7 +193,7 @@ function Promises() {
 
 function Products({ products }: { products: Product[] }) {
   return (
-    <section id="produits" className="scroll-mt-24 px-4 py-24 sm:px-8 lg:py-32">
+    <section id="produits" className="scroll-mt-24 px-4 py-20 sm:px-8 lg:py-24">
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
@@ -240,7 +207,7 @@ function Products({ products }: { products: Product[] }) {
           </p>
         </div>
 
-        <div className="mt-14 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:mt-20 lg:grid-cols-4 lg:gap-x-7">
+        <div className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:mt-20 lg:grid-cols-4 lg:gap-x-7">
           {products.map((p) => (
             <ProductCard key={p.slug} product={p} />
           ))}
@@ -294,113 +261,31 @@ function ProductCard({ product }: { product: Product }) {
 function Ritual() {
   return (
     <section id="rituel" className="grain scroll-mt-24 relative overflow-hidden bg-forest text-cream">
-      <div className="absolute -right-32 top-1/4 size-[34rem] rounded-full bg-gold/10 blur-3xl" aria-hidden />
-      <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-8 lg:py-32">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
-            <p className="eyebrow text-gold">Le rituel</p>
-            <h2 className="display mt-5 text-[clamp(2rem,4vw,3.25rem)] text-cream">
-              Nettoyer, exfolier, <em className="text-foil-bright font-normal">sublimer.</em>
-            </h2>
-          </div>
-          <p className="max-w-sm text-[0.95rem] leading-relaxed text-cream/60">
+      <div className="absolute -right-32 top-1/2 size-[30rem] -translate-y-1/2 rounded-full bg-gold/10 blur-3xl" aria-hidden />
+      <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-8 lg:py-20">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <h2 className="display text-[clamp(1.75rem,3vw,2.5rem)] text-cream">
+            Nettoyer, exfolier, <em className="text-foil-bright font-normal">sublimer.</em>
+          </h2>
+          <p className="max-w-sm text-[0.9rem] leading-relaxed text-cream/60">
             Quatre gestes simples, à adopter chaque jour ou chaque semaine.
           </p>
         </div>
 
-        <ol className="mt-16 grid gap-x-10 gap-y-12 sm:grid-cols-2 lg:mt-20 lg:grid-cols-4 lg:gap-x-8">
+        <ol className="mt-10 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
           {ritual.map((r) => (
-            <li key={r.step} className="reveal relative pt-8 lg:pt-10">
+            <li key={r.step} className="reveal relative pt-5">
               <span className="rule-gold absolute inset-x-0 top-0 h-px" aria-hidden />
-              <span className="font-serif text-[3.25rem] font-light leading-none text-gold/70">{r.step}</span>
-              <p className="eyebrow mt-5 text-gold/70">{r.area}</p>
-              <h3 className="mt-2 font-serif text-3xl font-light">{r.title}</h3>
-              <p className="mt-4 text-[0.85rem] leading-relaxed text-cream/60">{r.text}</p>
-              <p className="mt-6 text-xs text-cream/80">{r.product}</p>
+              <div className="flex items-baseline gap-3">
+                <span className="font-serif text-2xl font-light leading-none text-gold/70">{r.step}</span>
+                <span className="eyebrow text-gold/70">{r.area}</span>
+              </div>
+              <h3 className="mt-3 font-serif text-2xl font-light">{r.title}</h3>
+              <p className="mt-2 text-[0.82rem] leading-relaxed text-cream/60">{r.text}</p>
+              <p className="mt-3 text-xs text-cream/80">{r.product}</p>
             </li>
           ))}
         </ol>
-      </div>
-    </section>
-  );
-}
-
-/* ——— Manifesto ——— */
-
-function Manifesto() {
-  return (
-    <section id="manifesto" className="relative isolate overflow-hidden">
-      <Image
-        src="/brand/editorial-face-wash.webp"
-        alt="Flacon de Face Wash Desart tenu dans une main"
-        fill
-        sizes="100vw"
-        className="object-cover object-[58%_62%]"
-      />
-      <div className="absolute inset-0 bg-gradient-to-r from-forest via-forest/85 to-forest/20" aria-hidden />
-      <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-8 lg:py-32">
-        <div className="max-w-2xl">
-          <p className="eyebrow text-gold">Manifeste</p>
-          <h2 className="display mt-6 text-[clamp(2rem,4vw,3.25rem)] text-cream">
-            Quatre gestes,
-            <br />
-            <em className="text-foil-bright font-normal">pas un de plus.</em>
-          </h2>
-          <p className="mt-7 max-w-lg text-[0.95rem] leading-relaxed text-cream/70">
-            Nous croyons aux routines courtes. Un visage propre, une barbe disciplinée, une peau qui sent bon. Le reste,
-            c’est du bruit.
-          </p>
-          <a href="#commande" className="eyebrow mt-10 inline-block rounded-full border border-cream/30 px-8 py-4 text-cream transition-colors duration-300 hover:border-cream hover:bg-cream hover:text-forest">
-            Composer mon rituel
-          </a>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ——— Ingredients ——— */
-
-function Ingredients() {
-  return (
-    <section id="ingredients" className="scroll-mt-24 px-4 py-24 sm:px-8 lg:py-32">
-      <div className="mx-auto grid max-w-7xl gap-16 lg:grid-cols-[0.85fr_1.15fr] lg:gap-24">
-        <div className="reveal lg:sticky lg:top-32 lg:self-start">
-          <p className="eyebrow text-gold-deep">Ingrédients</p>
-          <h2 className="display mt-5 text-[clamp(2rem,4vw,3.25rem)] text-forest">
-            Ce que la nature
-            <br />
-            fait <em className="text-foil font-normal">de mieux.</em>
-          </h2>
-          <p className="mt-6 max-w-sm text-[0.95rem] leading-relaxed text-ink/65">
-            Des actifs reconnus, choisis pour leur douceur et leur efficacité. Rien de superflu.
-          </p>
-
-          <div className="relative mt-12 hidden aspect-[4/5] max-w-xs overflow-hidden rounded-[1.5rem] bg-sand-warm lg:block">
-            <Image
-              src="/brand/editorial-serum.webp"
-              alt="Flacon compte-gouttes Desart Sérum à la protéine végétale"
-              fill
-              sizes="20rem"
-              className="object-cover mix-blend-multiply"
-            />
-          </div>
-        </div>
-
-        <ul className="divide-y divide-forest/10 border-y border-forest/10">
-          {ingredients.map((ing, i) => (
-            <li key={ing.name} className="reveal group grid grid-cols-[2.5rem_1fr] gap-4 py-9 sm:grid-cols-[3.5rem_1fr_auto] sm:gap-6">
-              <span className="font-serif text-lg text-gold-deep">0{i + 1}</span>
-              <div>
-                <h3 className="font-serif text-2xl text-forest transition-colors duration-300 group-hover:text-gold-deep sm:text-3xl">
-                  {ing.name}
-                </h3>
-                <p className="mt-3 max-w-md text-[0.85rem] leading-relaxed text-ink/65">{ing.text}</p>
-              </div>
-              <span className="eyebrow col-start-2 text-forest/60 sm:col-start-auto sm:pt-4">{ing.origin}</span>
-            </li>
-          ))}
-        </ul>
       </div>
     </section>
   );
@@ -410,7 +295,7 @@ function Ingredients() {
 
 function Story() {
   return (
-    <section id="histoire" className="scroll-mt-24 bg-sand/45 px-4 py-24 sm:px-8 lg:py-32">
+    <section id="histoire" className="scroll-mt-24 bg-sand/45 px-4 py-20 sm:px-8 lg:py-24">
       <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-2 lg:gap-20">
         <div className="reveal relative mx-auto w-full max-w-md">
           <div className="relative aspect-[4/5] overflow-hidden rounded-[1.5rem]">
@@ -422,10 +307,6 @@ function Story() {
               className="object-cover"
             />
           </div>
-          <div className="absolute -bottom-5 -right-4 hidden rounded-2xl border border-forest/10 bg-cream-soft p-5 shadow-[0_20px_40px_-20px_rgba(35,49,41,0.4)] sm:block">
-            <p className="font-serif text-3xl font-light text-forest">100 %</p>
-            <p className="eyebrow mt-1 text-forest/60">Naturel</p>
-          </div>
         </div>
 
         <div className="reveal">
@@ -435,7 +316,7 @@ function Story() {
             <br />
             <em className="text-foil font-normal">le soleil du désert.</em>
           </h2>
-          <div className="mt-7 space-y-4 text-[0.95rem] leading-relaxed text-ink/70">
+          <div className="mt-6 space-y-4 text-[0.95rem] leading-relaxed text-ink/70">
             <p>
               Né de l’univers du barbier, Desart Solis réunit le soin du visage, des cheveux, de la barbe et du corps
               dans une gamme courte et exigeante.
@@ -446,14 +327,11 @@ function Story() {
             </p>
           </div>
 
-          <ul className="mt-10 grid gap-x-6 gap-y-6 border-t border-forest/15 pt-8 sm:grid-cols-2">
+          <ul className="mt-9 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-forest/15 pt-7 sm:grid-cols-4">
             {values.map((v) => (
-              <li key={v.title}>
-                <p className="flex items-center gap-3 font-serif text-xl text-forest">
-                  <Leaf className="size-3.5 shrink-0 text-gold" />
-                  {v.title}
-                </p>
-                <p className="mt-2 pl-6 text-[0.82rem] leading-relaxed text-ink/65">{v.text}</p>
+              <li key={v} className="flex items-center gap-2.5 font-serif text-xl text-forest">
+                <Leaf className="size-3.5 shrink-0 text-gold" />
+                {v}
               </li>
             ))}
           </ul>
@@ -467,7 +345,7 @@ function Story() {
 
 function Reviews({ reviews, products, whatsappNumber }: { reviews: Review[]; products: Product[]; whatsappNumber: string }) {
   return (
-    <section id="avis" className="scroll-mt-24 px-4 py-24 sm:px-8 lg:py-32">
+    <section id="avis" className="scroll-mt-24 px-4 py-20 sm:px-8 lg:py-24">
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
@@ -491,7 +369,7 @@ function Reviews({ reviews, products, whatsappNumber }: { reviews: Review[]; pro
 
 function Order() {
   return (
-    <section id="commande" className="scroll-mt-24 bg-cream-soft px-4 py-24 sm:px-8 lg:py-32">
+    <section id="commande" className="scroll-mt-24 bg-cream-soft px-4 py-20 sm:px-8 lg:py-24">
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
@@ -517,7 +395,7 @@ function Order() {
 function Faq({ faqs }: { faqs: FaqItem[] }) {
   if (faqs.length === 0) return null;
   return (
-    <section id="faq" className="scroll-mt-24 px-4 py-24 sm:px-8 lg:py-32">
+    <section id="faq" className="scroll-mt-24 px-4 py-20 sm:px-8 lg:py-24">
       <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[0.7fr_1.3fr] lg:gap-20">
         <div className="lg:sticky lg:top-32 lg:self-start">
           <p className="eyebrow text-gold-deep">Questions</p>
@@ -551,7 +429,7 @@ function Faq({ faqs }: { faqs: FaqItem[] }) {
 function FinalCta({ whatsappNumber }: { whatsappNumber: string }) {
   return (
     <section className="px-4 pb-24 sm:px-8 lg:pb-32">
-      <div className="grain relative mx-auto max-w-7xl overflow-hidden rounded-[1.75rem] bg-forest px-6 py-20 text-center text-cream sm:px-12 lg:py-28">
+      <div className="grain relative mx-auto max-w-7xl overflow-hidden rounded-[1.75rem] bg-forest px-6 py-16 text-center text-cream sm:px-12 lg:py-20">
         <div className="absolute -left-24 -top-24 size-80 rounded-full bg-gold/10 blur-3xl" aria-hidden />
         <div className="relative mx-auto max-w-2xl">
           <p className="eyebrow text-gold">Commande simple</p>

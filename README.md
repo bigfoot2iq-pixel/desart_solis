@@ -69,7 +69,7 @@ scripts/         one-off content migrations
 4. Add the slug to a `pack` if it belongs to a bundle.
 
 Product photos are displayed with `object-contain` on a warm sand panel, so a transparent
-background is required. Editorial photography (full-bleed sections) lives in `public/brand/`.
+background is required. Editorial photography (used in the story section) lives in `public/brand/`.
 
 ## Design system
 
