@@ -3,16 +3,36 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
- * The range is a snap rail on small screens and a plain grid from lg up.
+ * A horizontal snap rail on small screens and a plain grid once every card
+ * fits side by side.
  *
  * The cards themselves are rendered on the server and handed over as
- * children, so the catalogue markup never ships as client JavaScript —
- * this component only owns the scrolling and the position indicator.
+ * children, so the markup never ships as client JavaScript — this component
+ * only owns the scrolling and the position indicator.
+ *
+ * `gridClassName` carries the whole grid behaviour, including the reset of
+ * the rail behaviour (no scrolling, no snapping) at the same breakpoint.
  */
-export function RangeRail({ children }: { children: React.ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null);
+export function SnapRail({
+  children,
+  as: Element = "div",
+  className = "",
+  gridClassName,
+  itemLabel = "élément",
+}: {
+  children: React.ReactNode;
+  /** The element the cards live in — `ol` keeps a list of steps a list. */
+  as?: "div" | "ol";
+  /** Spacing around the rail itself. */
+  className?: string;
+  gridClassName: string;
+  /** Used to name the position indicator buttons for screen readers. */
+  itemLabel?: string;
+}) {
+  const ref = useRef<HTMLElement>(null);
   const [index, setIndex] = useState(0);
   const [count, setCount] = useState(0);
+  const Tag = Element as React.ElementType;
 
   useEffect(() => {
     const el = ref.current;
@@ -61,27 +81,27 @@ export function RangeRail({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="relative mt-10 lg:mt-16">
-      <div
+    <div className={`relative ${className}`}>
+      <Tag
         ref={ref}
         // `touch-auto` on purpose: the browser must be allowed to pan the rail
         // horizontally on touch, and it picks the axis from the gesture — a
         // sideways swipe moves the rail, a vertical one scrolls the page.
         // `pan-y` would silently kill the swipe. `overscroll-x-contain` stops
         // the page from bouncing when the rail reaches its first or last card.
-        className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain px-4 pb-2 scroll-pl-4 select-none touch-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-x-7 lg:gap-y-12 lg:overflow-visible lg:px-0 lg:pb-0 lg:snap-none lg:scroll-pl-0 lg:select-auto"
+        className={`-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain px-4 pb-2 scroll-pl-4 select-none touch-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${gridClassName}`}
       >
         {children}
-      </div>
+      </Tag>
 
       {count > 1 && (
-        <div className="mt-7 flex items-center justify-center gap-2 lg:hidden">
+        <div className="mt-6 flex items-center justify-center gap-2 lg:hidden">
           {Array.from({ length: count }, (_, i) => (
             <button
               key={i}
               type="button"
               onClick={() => goTo(i)}
-              aria-label={`Aller au produit ${i + 1}`}
+              aria-label={`Aller à l’${itemLabel} ${i + 1}`}
               aria-current={i === index}
               className={`h-[3px] rounded-full transition-all duration-500 ease-soft ${
                 i === index ? "w-8 bg-gold-deep" : "w-4 bg-forest/15"

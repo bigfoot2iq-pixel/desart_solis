@@ -49,7 +49,7 @@ Products are cached through `sanity/live.ts` and revalidated automatically when 
 
 ```
 app/
-  _components/   cart, order builder, reviews widget, mobile nav, range rail
+  _components/   cart, order builder, reviews widget, mobile nav, snap rail
   _data.ts       static brand copy (ritual, ingredients, promises, values)
   _lib/          catalogue fetching, shared types, rate limiting
   api/           review submission endpoints
@@ -68,14 +68,14 @@ standing on the baseline of the row, and only what a customer needs to choose
 it — name, size, price and the add control. The long copy lives in the order
 builder, where the visitor is actually shopping.
 
-Below `lg` the four columns become a snap rail (`_components/range-rail.tsx`):
+Below `lg` the four columns become a snap rail (`_components/snap-rail.tsx`):
 the cards stay small, the next one peeks in, and the section keeps its height
 instead of stacking four tall products. Swiping moves the rail card by card —
 the rail keeps `touch-action: auto` so the browser picks the axis from the
 gesture and a vertical swipe still scrolls the page — and the dashes below
 only mirror the position. The rail owns the scrolling and the position
 indicator only; the cards are rendered on the server and handed over as
-children.
+children. The ritual section uses the same rail for its four steps.
 
 The add button becomes a `− qty +` stepper as soon as the product is in the cart.
 
@@ -135,6 +135,21 @@ baseline; `scripts/build-range.py` does that trimming.
 Because the cutouts are transparent they stand straight on the page cream, so there is no
 image edge to seam against the hero. The warm halo behind them fades to zero alpha before
 any edge, and the arch's uprights are masked so they dissolve instead of stopping.
+
+## Mobile layout
+
+The page is composed desktop-first, but every section has a phone layout that
+is designed rather than collapsed. Measured on a 390 × 844 viewport:
+
+| Section | Desktop → phone | Height |
+| --- | --- | --- |
+| Trust bar | four columns → a 2 × 2 grid, smaller icons and notes | ~336 → 185 px |
+| Ritual | four columns → a snap rail of four step cards | ~1027 → 459 px |
+| Story | portrait + text side by side → a full-bleed 4:3 band, copy underneath | ~1136 → 860 px |
+
+The story stays single-column until `md`, where the portrait and the text can
+sit side by side again. Nothing is hidden on a phone — the ritual keeps every
+step, it just shows one at a time.
 
 ## Design system
 Tokens live in `app/globals.css`:

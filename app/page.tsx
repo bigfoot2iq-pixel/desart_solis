@@ -3,7 +3,7 @@ import { AddToOrderButton, CartProvider, OrderBar } from "./_components/cart";
 import { CartIndicator } from "./_components/cart-indicator";
 import { MobileNav, type NavItem } from "./_components/mobile-nav";
 import { OrderBuilder } from "./_components/order-builder";
-import { RangeRail } from "./_components/range-rail";
+import { SnapRail } from "./_components/snap-rail";
 import { ReviewsWidget } from "./_components/reviews";
 import { formatDh, promises, ritual, values, whatsappLink } from "./_data";
 import { getHomeContent } from "./_lib/catalog";
@@ -220,26 +220,37 @@ function HeroRange() {
   );
 }
 
+/* The trust bar used to be a single column of four rows below sm, which made
+   it the tallest block on the page — four times the height of the promise
+   itself. It is a 2×2 grid on small screens instead: every promise stays
+   visible without a swipe, and the bar reads as the thin band of reassurance
+   it is meant to be. The icons and the notes shrink to match the tighter
+   cell, and the row of four returns at lg where each column has room to
+   breathe. */
 function Promises() {
-  // Hairlines have to follow the grid: 1 column on mobile, 2 on sm, 4 on lg.
+  // Hairlines follow the grid: a 2×2 cross below lg, a single row of four
+  // above it.
   const rules = [
-    "border-b border-forest/10 sm:border-r lg:border-b-0",
+    "border-b border-r border-forest/10 lg:border-b-0",
     "border-b border-forest/10 lg:border-b-0 lg:border-r",
-    "border-b border-forest/10 sm:border-b-0 sm:border-r lg:border-b-0",
+    "border-r border-forest/10 lg:border-b-0",
     "",
   ];
 
   return (
     <section id="trust" className="border-y border-forest/10 bg-cream-soft">
-      <ul className="mx-auto grid max-w-7xl sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="mx-auto grid max-w-7xl grid-cols-2 lg:grid-cols-4">
         {promises.map((item, i) => (
-          <li key={item.label} className={`flex items-start gap-4 px-6 py-6 sm:px-8 lg:py-6 ${rules[i]}`}>
-            <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full border border-gold/50 text-gold-deep">
-              <PromiseIcon index={i} className="size-4" />
+          <li
+            key={item.label}
+            className={`flex items-start gap-2.5 px-4 py-4 sm:gap-4 sm:px-6 sm:py-6 ${rules[i]}`}
+          >
+            <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border border-gold/50 text-gold-deep sm:size-9">
+              <PromiseIcon index={i} className="size-3.5 sm:size-4" />
             </span>
-            <span>
-              <span className="block text-[0.8rem] font-medium leading-snug text-forest">{item.label}</span>
-              <span className="mt-1 block text-xs text-ink/65">{item.note}</span>
+            <span className="min-w-0">
+              <span className="block text-[0.78rem] font-medium leading-snug text-forest sm:text-[0.8rem]">{item.label}</span>
+              <span className="mt-0.5 block text-[0.6875rem] leading-snug text-ink/65 sm:mt-1 sm:text-xs">{item.note}</span>
             </span>
           </li>
         ))}
@@ -273,11 +284,15 @@ function Products({ products }: { products: Product[] }) {
           </p>
         </div>
 
-        <RangeRail>
+        <SnapRail
+          className="mt-10 lg:mt-16"
+          gridClassName="lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-x-7 lg:gap-y-12 lg:overflow-visible lg:px-0 lg:pb-0 lg:snap-none lg:scroll-pl-0 lg:select-auto"
+          itemLabel="produit"
+        >
           {products.map((p) => (
             <ProductCard key={p.slug} product={p} />
           ))}
-        </RangeRail>
+        </SnapRail>
       </div>
     </section>
   );
@@ -338,12 +353,17 @@ function ProductCard({ product }: { product: Product }) {
 
 /* ——— Ritual ——— */
 
+/* The four steps are gestures, not paragraphs. Stacked in one column they
+   were taller than the screen, so on a phone they become a snap rail: one
+   step at a time, swiped sideways, with the same position indicator the
+   range uses. From lg up the rail opens into the four columns of the
+   desktop layout. */
 function Ritual() {
   return (
     <section id="rituel" className="grain scroll-mt-24 relative overflow-hidden bg-forest text-cream">
       <div className="absolute -right-32 top-1/2 size-[30rem] -translate-y-1/2 rounded-full bg-gold/10 blur-3xl" aria-hidden />
-      <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-8 lg:py-20">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-8 sm:py-16 lg:py-20">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-5">
           <h2 className="display text-[clamp(1.75rem,3vw,2.5rem)] text-cream">
             Nettoyer, exfolier, <em className="text-foil-bright font-normal">sublimer.</em>
           </h2>
@@ -352,9 +372,17 @@ function Ritual() {
           </p>
         </div>
 
-        <ol className="mt-10 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+        <SnapRail
+          as="ol"
+          className="mt-8 lg:mt-10"
+          gridClassName="lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-x-8 lg:gap-y-8 lg:overflow-visible lg:px-0 lg:pb-0 lg:snap-none lg:scroll-pl-0 lg:select-auto"
+          itemLabel="étape"
+        >
           {ritual.map((r) => (
-            <li key={r.step} className="reveal relative pt-5">
+            <li
+              key={r.step}
+              className="reveal relative w-[72vw] max-w-[17rem] shrink-0 snap-start pt-5 lg:w-auto lg:max-w-none"
+            >
               <span className="rule-gold absolute inset-x-0 top-0 h-px" aria-hidden />
               <div className="flex items-baseline gap-3">
                 <span className="font-serif text-2xl font-light leading-none text-gold/80">{r.step}</span>
@@ -365,7 +393,7 @@ function Ritual() {
               <p className="mt-3 text-xs text-cream/80">{r.product}</p>
             </li>
           ))}
-        </ol>
+        </SnapRail>
       </div>
     </section>
   );
@@ -373,30 +401,34 @@ function Ritual() {
 
 /* ——— Story ——— */
 
+/* The desktop composition is a portrait frame beside the text. On a phone
+   that portrait becomes the tallest thing on the page, so it turns into a
+   full-bleed band and the copy takes the whole width under it. The band
+   stays until there is room for the portrait and the text side by side. */
 function Story() {
   return (
-    <section id="histoire" className="scroll-mt-24 bg-sand/45 px-4 py-20 sm:px-8 lg:py-24">
-      <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-2 lg:gap-20">
-        <div className="reveal relative mx-auto w-full max-w-md">
-          <div className="relative aspect-[4/5] overflow-hidden rounded-[1.5rem]">
+    <section id="histoire" className="scroll-mt-24 bg-sand/45 px-4 py-14 sm:px-8 sm:py-20 lg:py-24">
+      <div className="mx-auto grid max-w-6xl items-center gap-8 sm:gap-10 md:grid-cols-2 lg:gap-20">
+        <div className="reveal relative -mx-4 sm:mx-auto sm:w-full sm:max-w-md md:max-w-none">
+          <div className="relative aspect-[4/3] overflow-hidden md:aspect-[4/5] md:rounded-[1.5rem]">
             <Image
               src="/brand/editorial-gommage.webp"
               alt="Tube de Gommage Visage Desart posé près d’une noix de coco"
               fill
-              sizes="(min-width: 1024px) 26rem, 90vw"
-              className="object-cover"
+              sizes="(min-width: 1024px) 26rem, (min-width: 768px) 40vw, 100vw"
+              className="object-cover object-[50%_62%] md:object-center"
             />
           </div>
         </div>
 
         <div className="reveal">
           <p className="eyebrow text-gold-deep">Notre histoire</p>
-          <h2 className="display mt-5 text-[clamp(2rem,4vw,3.25rem)] text-forest">
+          <h2 className="display mt-4 text-[1.8rem] text-forest sm:mt-5 sm:text-[clamp(2rem,4vw,3.25rem)]">
             Desart Solis,
             <br />
             <em className="text-foil font-normal">le soleil du désert.</em>
           </h2>
-          <div className="mt-6 space-y-4 text-[0.95rem] leading-relaxed text-ink/70">
+          <div className="mt-5 space-y-3 text-[0.9rem] leading-relaxed text-ink/70 sm:mt-6 sm:space-y-4 sm:text-[0.95rem]">
             <p>
               Né de l’univers du barbier, Desart Solis réunit le soin du visage, des cheveux, de la barbe et du corps
               dans une gamme courte et exigeante.
@@ -407,9 +439,9 @@ function Story() {
             </p>
           </div>
 
-          <ul className="mt-9 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-forest/15 pt-7 sm:grid-cols-4">
+          <ul className="mt-7 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-forest/15 pt-5 sm:mt-9 sm:gap-x-6 sm:gap-y-3 sm:pt-7 lg:grid-cols-4">
             {values.map((v) => (
-              <li key={v} className="flex items-center gap-2.5 font-serif text-xl text-forest">
+              <li key={v} className="flex items-center gap-2 font-serif text-lg text-forest sm:gap-2.5 sm:text-xl">
                 <Leaf className="size-3.5 shrink-0 text-gold" />
                 {v}
               </li>
@@ -451,16 +483,18 @@ function Order() {
   return (
     <section id="commande" className="scroll-mt-24 bg-cream-soft px-4 py-20 sm:px-8 lg:py-24">
       <div className="mx-auto max-w-7xl">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+        {/* On a phone the intro is a title and one line of reassurance — the
+            step rail below carries the detail, so the spacing stays tight. */}
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
           <div className="max-w-2xl">
             <p className="eyebrow text-gold-deep">Commande</p>
-            <h2 className="display mt-5 text-[clamp(2rem,4vw,3.25rem)] text-forest">
+            <h2 className="display mt-4 text-[clamp(2rem,4vw,3.25rem)] text-forest lg:mt-5">
               Composez <em className="text-foil font-normal">votre rituel.</em>
             </h2>
           </div>
-          <p className="max-w-sm text-[0.95rem] leading-relaxed text-ink/65">
-            Choisissez un pack ou vos soins à l’unité, indiquez votre ville : le total s’affiche instantanément.
-            Confirmation sur WhatsApp, paiement à la livraison.
+          <p className="max-w-sm text-[0.9rem] leading-relaxed text-ink/65 lg:text-[0.95rem]">
+            Choisissez un pack ou vos soins à l’unité, indiquez votre ville. Confirmation sur WhatsApp, paiement à la
+            livraison.
           </p>
         </div>
 
