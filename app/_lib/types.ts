@@ -6,6 +6,8 @@ export type Product = {
   name: string;
   category: string;
   tagline: string;
+  /** Short merchandising label, e.g. "Nouveau". */
+  badge: string | null;
   description: string;
   size: string;
   price: number;

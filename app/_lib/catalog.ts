@@ -38,6 +38,7 @@ function normalize(data: HOME_QUERY_RESULT) {
         name: p.name,
         category: p.category ?? "",
         tagline: p.tagline ?? "",
+        badge: p.badge ?? null,
         description: p.description ?? "",
         size: p.size ?? "",
         price: p.price,

@@ -46,6 +46,13 @@ export const product = defineType({
       validation: (rule) => rule.required(),
     }),
     defineField({
+      name: 'badge',
+      title: 'Badge',
+      type: 'string',
+      description: 'Facultatif. Étiquette affichée sur la fiche produit. Ex. Nouveau',
+      validation: (rule) => rule.max(16),
+    }),
+    defineField({
       name: 'category',
       title: 'Catégorie',
       type: 'string',

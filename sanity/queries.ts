@@ -17,6 +17,7 @@ export const HOME_QUERY = defineQuery(`{
     "slug": slug.current,
     category,
     tagline,
+    badge,
     description,
     size,
     price,
