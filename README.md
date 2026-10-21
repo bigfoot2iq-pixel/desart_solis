@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Desart Solis — landing page
 
-## Getting Started
+Single-page storefront for **Desart Solis**, a Moroccan argan-oil care brand (skin · hair · body · beard).
+Next.js 16 (App Router) + Sanity Studio, with WhatsApp as the checkout channel.
 
-First, run the development server:
+## Stack
+
+| Layer | Choice |
+| --- | --- |
+| Framework | Next.js 16.4 (App Router, Turbopack, Cache Components) |
+| UI | Tailwind CSS v4 (`@theme` tokens in `app/globals.css`) |
+| Fonts | Cormorant Garamond (display) + Montserrat (UI) via `next/font` |
+| Content | Sanity (`next-sanity` + `SanityLive`), dataset `production` |
+| Checkout | WhatsApp deep link, cash on delivery |
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm dev          # http://localhost:3000
+pnpm studio       # Sanity Studio → https://desart-solis.sanity.studio
+pnpm build        # production build
+pnpm lint         # eslint
+pnpm typegen      # regenerate sanity.types.ts from the Studio schema
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Copy `.env.example` to `.env.local` and fill in the values:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `NEXT_PUBLIC_SANITY_PROJECT_ID` / `NEXT_PUBLIC_SANITY_DATASET` — content lake coordinates
+- `SANITY_API_WRITE_TOKEN` — server-only token used by the review endpoints. Never expose it to the client.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Content model
 
-## Learn More
+All catalogue content lives in Sanity; only brand copy and layout live in the repo.
 
-To learn more about Next.js, take a look at the following resources:
+| Type | Purpose |
+| --- | --- |
+| `product` | name, slug, price, size, tagline, description, notes, category, badge, image, availability, sortOrder |
+| `pack` | a bundle of products with a percentage discount |
+| `review` | customer review with optional photo/video, verified badge, reply, helpful count |
+| `faq` | question / answer pairs |
+| `siteSettings` | WhatsApp number, socials, announcement bar, shipping fees, free-shipping threshold |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Categories: `visage`, `cheveux`, `barbe`, `corps`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Products are cached through `sanity/live.ts` and revalidated automatically when a document is published.
 
-## Deploy on Vercel
+## Project layout
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+app/
+  _components/   cart, order builder, reviews widget, mobile nav
+  _data.ts       static brand copy (ritual, ingredients, promises, values)
+  _lib/          catalogue fetching, shared types, rate limiting
+  api/           review submission endpoints
+  page.tsx       landing page composition
+  globals.css    design tokens + brand utilities
+public/brand/    logo lockups, product cutouts, editorial photography
+sanity/          client, live cache, GROQ queries
+studio/          Sanity Studio (schema types, structure)
+scripts/         one-off content migrations
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Adding a product
+
+1. Upload a transparent cutout (PNG/WebP) as the product image in Studio.
+2. Create the product document: set `name`, `slug`, `price`, `size`, `category`, `availability`.
+3. Optionally set `badge` (e.g. `Nouveau`) — it renders as a pill on the product card and the card in the hero.
+4. Add the slug to a `pack` if it belongs to a bundle.
+
+Product photos are displayed with `object-contain` on a warm sand panel, so a transparent
+background is required. Editorial photography (full-bleed sections) lives in `public/brand/`.
+
+## Design system
+
+Tokens live in `app/globals.css`:
+
+- **Colours** — `cream`, `sand`, `forest`, `gold`, `ink` (see `public/brand/branding-board.webp`)
+- **Utilities** — `display` (large serif), `eyebrow` (tracked small caps), `arch` (Moroccan dome),
+  `grain` (paper texture), `text-foil` / `text-foil-bright` (metallic gold on light / dark surfaces),
+  `nums` (lining + tabular figures)
+- **Motion** — scroll reveals use CSS `animation-timeline: view()` and are disabled under
+  `prefers-reduced-motion`
+
+Muted text keeps at least WCAG AA contrast (4.5:1) on its surface; gold on dark panels uses the
+`text-foil-bright` variant.

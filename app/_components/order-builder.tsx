@@ -70,7 +70,7 @@ export function OrderBuilder() {
   }
 
   return (
-    <form onSubmit={submit} noValidate className="mx-auto mt-16 grid max-w-7xl gap-10 lg:mt-20 lg:grid-cols-[1fr_26rem] lg:gap-14">
+    <form onSubmit={submit} noValidate className="mt-14 grid gap-10 lg:mt-16 lg:grid-cols-[1fr_23rem] lg:gap-12">
       <div className="min-w-0 space-y-14">
         {/* Step 1 — products */}
         <Step n="1" title="Choisissez vos soins" error={touched ? errors.items : null}>
@@ -87,7 +87,7 @@ export function OrderBuilder() {
                   onClick={() => (active ? setQty(pack.id, 0) : add(pack.id))}
                   aria-pressed={active}
                   className={`relative rounded-2xl border p-5 text-left transition-all duration-300 ${
-                    active ? "border-forest bg-forest text-cream" : "border-forest/15 bg-cream hover:border-forest/40"
+                    active ? "border-forest bg-forest text-cream" : "border-forest/15 bg-cream-soft hover:border-forest/40"
                   }`}
                 >
                   {pack.badge && (
@@ -97,7 +97,7 @@ export function OrderBuilder() {
                     <div>
                       <p className={`eyebrow ${active ? "text-gold" : "text-gold-deep"}`}>Pack · −{Math.round(pack.discount * 100)} %</p>
                       <p className="mt-2 font-serif text-2xl">{pack.name}</p>
-                      <p className={`mt-1 text-xs ${active ? "text-cream/60" : "text-ink/55"}`}>{pack.description}</p>
+                      <p className={`mt-1 text-xs ${active ? "text-cream/60" : "text-ink/65"}`}>{pack.description}</p>
                     </div>
                     <span
                       className={`mt-1 flex size-6 shrink-0 items-center justify-center rounded-full border ${
@@ -107,7 +107,7 @@ export function OrderBuilder() {
                       {active && <Check className="size-3.5" />}
                     </span>
                   </div>
-                  <div className="mt-5 flex items-center justify-between">
+                  <div className="mt-5 flex items-center justify-between gap-3">
                     <div className="flex -space-x-3">
                       {pack.items.map((slug) => {
                         const p = products.find((x) => x.slug === slug)!;
@@ -119,8 +119,8 @@ export function OrderBuilder() {
                       })}
                     </div>
                     <p className="text-right">
-                      <span className={`mr-2 text-xs line-through ${active ? "text-cream/45" : "text-ink/40"}`}>{formatDh(full)}</span>
-                      <span className="font-serif text-2xl">{formatDh(price)}</span>
+                      <span className={`mr-2 text-xs nums line-through ${active ? "text-cream/60" : "text-ink/65"}`}>{formatDh(full)}</span>
+                      <span className="font-serif text-2xl nums">{formatDh(price)}</span>
                     </p>
                   </div>
                 </button>
@@ -129,23 +129,23 @@ export function OrderBuilder() {
           </div>
           )}
 
-          {packs.length > 0 && <p className="eyebrow mb-4 mt-10 text-forest/50">Ou à l’unité</p>}
+          {packs.length > 0 && <p className="eyebrow mb-4 mt-10 text-forest/60">Ou à l’unité</p>}
           <ul className="divide-y divide-forest/10 border-y border-forest/10">
             {products.map((p) => {
               const qty = lines[p.slug] ?? 0;
               return (
                 <li key={p.slug} className="flex items-center gap-4 py-4 sm:gap-6">
-                  <span className="flex size-16 shrink-0 items-center justify-center rounded-xl bg-sand">
+                  <span className="flex size-16 shrink-0 items-center justify-center rounded-xl bg-sand-warm">
                     <Image src={p.image.url} alt="" width={p.image.width} height={p.image.height} sizes="48px" className="h-12 w-auto" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-serif text-xl text-forest">{p.name}</p>
-                    <p className="text-xs text-ink/55">
+                    <p className="text-xs nums text-ink/65">
                       {p.size} · {formatDh(p.price)}
                     </p>
                   </div>
                   {p.soldOut ? (
-                    <span className="text-xs text-ink/45">Rupture de stock</span>
+                    <span className="text-xs text-ink/65">Rupture de stock</span>
                   ) : (
                     <Stepper value={qty} onChange={(v) => setQty(p.slug, v)} label={p.name} />
                   )}
@@ -187,7 +187,7 @@ export function OrderBuilder() {
                       </option>
                     ))}
                   </select>
-                  <Chevron className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-forest/50" />
+                  <Chevron className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-forest/60" />
                 </div>
               )}
             </Field>
@@ -217,82 +217,84 @@ export function OrderBuilder() {
 
       {/* Summary */}
       <aside className="lg:sticky lg:top-28 lg:self-start">
-        <div className="rounded-3xl bg-forest p-7 text-cream sm:p-8">
-          <div className="flex items-baseline justify-between">
-            <p className="font-serif text-3xl">Récapitulatif</p>
-            {count > 0 && (
-              <button type="button" onClick={clear} className="text-xs text-cream/50 underline-offset-4 hover:text-cream hover:underline">
-                Vider
-              </button>
-            )}
-          </div>
+        <div className="grain relative overflow-hidden rounded-[1.75rem] bg-forest p-7 text-cream sm:p-8">
+          <div className="relative">
+            <div className="flex items-baseline justify-between">
+              <p className="font-serif text-3xl font-light">Récapitulatif</p>
+              {count > 0 && (
+                <button type="button" onClick={clear} className="text-xs text-cream/60 underline-offset-4 hover:text-cream hover:underline">
+                  Vider
+                </button>
+              )}
+            </div>
 
-          {items.length === 0 ? (
-            <p className="mt-6 rounded-xl border border-dashed border-cream/20 px-5 py-8 text-center text-sm text-cream/55">Votre sélection est vide.</p>
-          ) : (
-            <ul className="mt-6 space-y-4">
-              {items.map((l) => (
-                <li key={l.id} className="flex items-start justify-between gap-4 text-sm">
-                  <div>
-                    <p>
-                      <span className="text-gold">{l.qty} ×</span> {l.name}
-                    </p>
-                    <p className="text-xs text-cream/50">{l.detail}</p>
-                  </div>
-                  <p className="shrink-0 tabular-nums">{formatDh(l.unitPrice * l.qty)}</p>
+            {items.length === 0 ? (
+              <p className="mt-6 rounded-xl border border-dashed border-cream/20 px-5 py-8 text-center text-sm text-cream/65">Votre sélection est vide.</p>
+            ) : (
+              <ul className="mt-6 space-y-4">
+                {items.map((l) => (
+                  <li key={l.id} className="flex items-start justify-between gap-4 text-sm">
+                    <div>
+                      <p>
+                        <span className="text-gold">{l.qty} ×</span> {l.name}
+                      </p>
+                      <p className="text-xs text-cream/60">{l.detail}</p>
+                    </div>
+                    <p className="shrink-0 nums">{formatDh(l.unitPrice * l.qty)}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {count > 0 && freeFrom !== null && (
+              <div className="mt-6">
+                <div className="h-1 overflow-hidden rounded-full bg-cream/10">
+                  <div className="bg-foil h-full rounded-full transition-[width] duration-700 ease-soft" style={{ width: `${Math.min(100, (subtotal / freeFrom) * 100)}%` }} />
+                </div>
+                <p className="mt-2 text-xs text-cream/60">
+                  {freeShipping ? "Livraison offerte ✓" : `Plus que ${formatDh(toFree)} pour la livraison offerte`}
+                </p>
+              </div>
+            )}
+
+            <dl className="mt-6 space-y-2.5 border-t border-cream/10 pt-6 text-sm">
+              <Row label="Sous-total" value={formatDh(subtotal)} />
+              {savings > 0 && <Row label="Économies packs" value={`−${formatDh(savings)}`} accent />}
+              <Row
+                label={city ? `Livraison · ${city.name}` : "Livraison"}
+                value={deliveryFee === null ? "Choisir une ville" : deliveryFee === 0 ? "Offerte" : formatDh(deliveryFee)}
+                muted={deliveryFee === null}
+              />
+            </dl>
+            <div className="mt-5 flex items-baseline justify-between border-t border-cream/10 pt-5">
+              <span className="eyebrow text-cream/70">Total</span>
+              <span className="font-serif text-4xl nums">{deliveryFee === null && count > 0 ? "—" : formatDh(total)}</span>
+            </div>
+            <p className="mt-1 text-right text-xs text-cream/60">Paiement en espèces à la livraison</p>
+
+            <button
+              type="submit"
+              className="eyebrow bg-foil mt-7 flex w-full items-center justify-center gap-3 rounded-full py-4 text-forest transition-[filter,opacity] duration-300 hover:brightness-110"
+            >
+              <WhatsAppIcon className="size-4" />
+              Commander sur WhatsApp
+            </button>
+            {touched && !valid && <p className="mt-3 text-center text-xs text-[#f0b9a5]">Complétez les champs indiqués pour continuer.</p>}
+            {sent && valid && (
+              <p className="mt-3 text-center text-xs text-cream/70">
+                WhatsApp s’est ouvert avec votre commande. Envoyez le message : nous confirmons très vite.
+              </p>
+            )}
+
+            <ul className="mt-8 grid grid-cols-2 gap-3 border-t border-cream/10 pt-6 text-xs text-cream/65">
+              {["Paiement à la livraison", "Confirmation WhatsApp", "Livraison partout au Maroc", "Conseil personnalisé"].map((t) => (
+                <li key={t} className="flex items-center gap-2">
+                  <Check className="size-3.5 shrink-0 text-gold" />
+                  {t}
                 </li>
               ))}
             </ul>
-          )}
-
-          {count > 0 && freeFrom !== null && (
-            <div className="mt-6">
-              <div className="h-1 overflow-hidden rounded-full bg-cream/10">
-                <div className="bg-foil h-full rounded-full transition-[width] duration-700 ease-soft" style={{ width: `${Math.min(100, (subtotal / freeFrom) * 100)}%` }} />
-              </div>
-              <p className="mt-2 text-xs text-cream/60">
-                {freeShipping ? "Livraison offerte ✓" : `Plus que ${formatDh(toFree)} pour la livraison offerte`}
-              </p>
-            </div>
-          )}
-
-          <dl className="mt-6 space-y-2.5 border-t border-cream/10 pt-6 text-sm">
-            <Row label="Sous-total" value={formatDh(subtotal)} />
-            {savings > 0 && <Row label="Économies packs" value={`−${formatDh(savings)}`} accent />}
-            <Row
-              label={city ? `Livraison · ${city.name}` : "Livraison"}
-              value={deliveryFee === null ? "Choisir une ville" : deliveryFee === 0 ? "Offerte" : formatDh(deliveryFee)}
-              muted={deliveryFee === null}
-            />
-          </dl>
-          <div className="mt-5 flex items-baseline justify-between border-t border-cream/10 pt-5">
-            <span className="eyebrow text-cream/70">Total</span>
-            <span className="font-serif text-4xl tabular-nums">{deliveryFee === null && count > 0 ? "—" : formatDh(total)}</span>
           </div>
-          <p className="mt-1 text-right text-xs text-cream/50">Paiement en espèces à la livraison</p>
-
-          <button
-            type="submit"
-            className="eyebrow bg-foil mt-7 flex w-full items-center justify-center gap-3 rounded-full py-4 text-forest transition-[filter,opacity] duration-300 hover:brightness-110"
-          >
-            <WhatsAppIcon className="size-4" />
-            Commander sur WhatsApp
-          </button>
-          {touched && !valid && <p className="mt-3 text-center text-xs text-[#f0b9a5]">Complétez les champs indiqués pour continuer.</p>}
-          {sent && valid && (
-            <p className="mt-3 text-center text-xs text-cream/70">
-              WhatsApp s’est ouvert avec votre commande. Envoyez le message : nous confirmons très vite.
-            </p>
-          )}
-
-          <ul className="mt-8 grid grid-cols-2 gap-3 border-t border-cream/10 pt-6 text-xs text-cream/65">
-            {["Paiement à la livraison", "Confirmation WhatsApp", "Livraison partout au Maroc", "Conseil personnalisé"].map((t) => (
-              <li key={t} className="flex items-center gap-2">
-                <Check className="size-3.5 shrink-0 text-gold" />
-                {t}
-              </li>
-            ))}
-          </ul>
         </div>
       </aside>
     </form>
@@ -300,14 +302,14 @@ export function OrderBuilder() {
 }
 
 const inputCls =
-  "w-full rounded-xl border border-forest/15 bg-cream px-4 py-3.5 text-sm text-ink outline-none transition-colors placeholder:text-ink/35 focus:border-forest";
+  "w-full rounded-xl border border-forest/15 bg-cream-soft px-4 py-3.5 text-sm text-ink outline-none transition-colors placeholder:text-ink/30 focus:border-forest";
 
 function Step({ n, title, error, children }: { n: string; title: string; error?: string | null; children: React.ReactNode }) {
   return (
     <fieldset className="min-w-0">
       <legend className="mb-7 flex w-full items-center gap-4">
-        <span className="flex size-9 items-center justify-center rounded-full border border-gold font-serif text-lg text-gold-deep">{n}</span>
-        <span className="font-serif text-3xl text-forest">{title}</span>
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-gold font-serif text-lg text-gold-deep">{n}</span>
+        <span className="font-serif text-3xl font-light text-forest">{title}</span>
       </legend>
       {error && <p className="-mt-3 mb-5 text-xs text-[#b4533a]">{error}</p>}
       {children}
@@ -321,7 +323,7 @@ function Field({ label, optional, error, children }: { label: string; optional?:
     <div>
       <label htmlFor={id} className="mb-2 flex justify-between text-xs font-medium text-forest/80">
         {label}
-        {optional && <span className="font-normal text-ink/40">Facultatif</span>}
+        {optional && <span className="font-normal text-ink/65">Facultatif</span>}
       </label>
       <div className={error ? "[&_input]:border-[#b4533a] [&_select]:border-[#b4533a]" : ""}>{children(id)}</div>
       {error && <p className="mt-1.5 text-xs text-[#b4533a]">{error}</p>}
@@ -333,7 +335,7 @@ function Row({ label, value, accent, muted }: { label: string; value: string; ac
   return (
     <div className="flex justify-between gap-4">
       <dt className="text-cream/65">{label}</dt>
-      <dd className={`tabular-nums ${accent ? "text-gold" : muted ? "text-cream/45" : ""}`}>{value}</dd>
+      <dd className={`nums ${accent ? "text-gold" : muted ? "text-cream/60" : ""}`}>{value}</dd>
     </div>
   );
 }
@@ -350,7 +352,7 @@ function Stepper({ value, onChange, label }: { value: number; onChange: (v: numb
       >
         <Minus className="size-3.5" />
       </button>
-      <span className="w-6 text-center text-sm tabular-nums" aria-live="polite">
+      <span className="w-6 text-center text-sm nums" aria-live="polite">
         {value}
       </span>
       <button type="button" onClick={() => onChange(value + 1)} aria-label={`Ajouter ${label}`} className="flex size-10 items-center justify-center text-forest">

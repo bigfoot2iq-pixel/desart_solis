@@ -125,70 +125,84 @@ export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: 
   const resetPaging = () => setVisible(PAGE_SIZE);
 
   return (
-    <div className="mx-auto mt-16 max-w-7xl lg:mt-20">
+    <div className="mt-14 lg:mt-16">
       {/* Summary header */}
-      <div className="grid gap-10 rounded-3xl border border-forest/10 bg-white/60 p-7 sm:p-10 lg:grid-cols-[auto_1fr_auto] lg:items-center lg:gap-14">
-        <div className="text-center lg:border-r lg:border-forest/10 lg:pr-14 lg:text-left">
+      <div className="grain relative grid gap-10 overflow-hidden rounded-[1.75rem] bg-forest p-7 text-cream sm:p-10 lg:grid-cols-[auto_1fr_auto] lg:items-center lg:gap-14">
+        <div className="text-center lg:border-r lg:border-cream/15 lg:pr-14 lg:text-left">
           {stats.total > 0 ? (
             <>
-              <p className="font-serif text-7xl leading-none text-forest">{stats.avg.toFixed(1)}</p>
+              <p className="font-serif text-7xl leading-none font-light text-cream">{stats.avg.toFixed(1)}</p>
               <Stars rating={stats.avg} className="mt-3 justify-center lg:justify-start" size="size-5" />
-              <p className="mt-2 text-sm text-ink/60">
+              <p className="mt-2 text-sm text-cream/60">
                 Basé sur{" "}
-                <strong className="font-medium text-forest">
+                <strong className="font-medium text-cream">
                   {stats.total} avis
                 </strong>
               </p>
-              <p className="mt-1 text-xs text-ink/50">{stats.recommend} % recommandent ces produits</p>
+              <p className="mt-1 text-xs text-cream/60">{stats.recommend} % recommandent ces produits</p>
             </>
           ) : (
             <>
               <Stars rating={0} className="justify-center lg:justify-start" size="size-6" />
-              <p className="mt-3 font-serif text-2xl text-forest">Aucun avis pour le moment</p>
-              <p className="mt-1 text-sm text-ink/55">Soyez le premier à partager votre expérience.</p>
+              <p className="mt-3 font-serif text-2xl text-cream">Aucun avis pour le moment</p>
+              <p className="mt-1 text-sm text-cream/60">Soyez le premier à partager votre expérience.</p>
             </>
           )}
         </div>
 
-        <ul className="space-y-2">
-          {stats.dist.map(({ star, count }) => {
-            const active = ratingFilter === star;
-            const pct = stats.total ? (count / stats.total) * 100 : 0;
-            return (
-              <li key={star}>
-                <button
-                  type="button"
-                  disabled={count === 0}
-                  onClick={() => {
-                    setRatingFilter(active ? null : star);
-                    resetPaging();
-                  }}
-                  aria-pressed={active}
-                  aria-label={`Filtrer les avis ${star} étoiles (${count})`}
-                  className={`group flex w-full items-center gap-3 rounded-md px-2 py-1 text-sm transition-colors disabled:cursor-default ${
-                    active ? "bg-sand" : "enabled:hover:bg-sand/60"
-                  }`}
-                >
-                  <Stars rating={star} size="size-3.5" />
-                  <span className="h-2 flex-1 overflow-hidden rounded-full bg-forest/10">
-                    <span className="bg-foil block h-full rounded-full" style={{ width: `${pct}%` }} />
-                  </span>
-                  <span className="w-6 text-right tabular-nums text-ink/60">{count}</span>
-                </button>
+        {stats.total > 0 ? (
+          <ul className="space-y-2">
+            {stats.dist.map(({ star, count }) => {
+              const active = ratingFilter === star;
+              const pct = stats.total ? (count / stats.total) * 100 : 0;
+              return (
+                <li key={star}>
+                  <button
+                    type="button"
+                    disabled={count === 0}
+                    onClick={() => {
+                      setRatingFilter(active ? null : star);
+                      resetPaging();
+                    }}
+                    aria-pressed={active}
+                    aria-label={`Filtrer les avis ${star} étoiles (${count})`}
+                    className={`group flex w-full items-center gap-3 rounded-md px-2 py-1 text-sm transition-colors disabled:cursor-default ${
+                      active ? "bg-cream/10" : "enabled:hover:bg-cream/5"
+                    }`}
+                  >
+                    <Stars rating={star} size="size-3.5" />
+                    <span className="h-2 flex-1 overflow-hidden rounded-full bg-cream/15">
+                      <span className="bg-foil block h-full rounded-full transition-[width] duration-700 ease-soft" style={{ width: `${pct}%` }} />
+                    </span>
+                    <span className="w-6 text-right nums text-cream/65">{count}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          // No reviews yet — show the range that is waiting to be rated
+          <ul className="flex items-end justify-center gap-3 sm:justify-start sm:gap-5">
+            {products.map((p) => (
+              <li key={p.slug} className="flex w-16 flex-col items-center gap-3 sm:w-20">
+                <span className="flex h-24 w-full items-end justify-center rounded-xl bg-cream/5">
+                  <Image src={p.image.url} alt="" width={p.image.width} height={p.image.height} sizes="64px" className="h-20 w-auto" />
+                </span>
+                <span className="text-center text-[0.6rem] leading-tight text-cream/60">{p.name}</span>
               </li>
-            );
-          })}
-        </ul>
+            ))}
+          </ul>
+        )}
 
         <div className="flex flex-col items-center gap-3 lg:items-end">
           <button
             type="button"
             onClick={() => setWriteOpen(true)}
-            className="eyebrow rounded-full bg-forest px-8 py-4 text-cream transition-colors duration-300 hover:bg-forest-soft"
+            className="eyebrow bg-foil w-full rounded-full px-8 py-4 text-forest transition-[filter] duration-300 hover:brightness-110 lg:w-auto"
           >
             Écrire un avis
           </button>
-          <p className="max-w-[14rem] text-center text-xs text-ink/50 lg:text-right">Partagez votre expérience avec la communauté Desart Solis.</p>
+          <p className="max-w-[14rem] text-center text-xs text-cream/60 lg:text-right">Partagez votre expérience avec la communauté Desart Solis.</p>
         </div>
       </div>
 
@@ -239,7 +253,7 @@ export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: 
                 </Chip>
               ))}
             </div>
-            <label className="flex shrink-0 items-center gap-2 text-xs text-ink/60">
+            <label className="flex shrink-0 items-center gap-2 text-xs text-ink/65">
               Trier
               <select
                 value={sort}
@@ -255,7 +269,7 @@ export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: 
             </label>
           </div>
 
-          <div className="mt-4 flex min-h-6 items-center gap-3 text-xs text-ink/55">
+          <div className="mt-4 flex min-h-6 items-center gap-3 text-xs text-ink/65">
             <span>
               {filtered.length} avis{ratingFilter ? ` · ${ratingFilter} étoile${ratingFilter > 1 ? "s" : ""}` : ""}
             </span>
@@ -280,7 +294,7 @@ export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: 
               <ReviewCard key={r.id} review={r} product={productBySlug.get(r.product)} vote={votes[r.id]} onVote={vote} onOpenMedia={openMedia} />
             ))}
           </div>
-          {filtered.length === 0 && <p className="py-16 text-center text-sm text-ink/55">Aucun avis ne correspond à ces filtres.</p>}
+          {filtered.length === 0 && <p className="py-16 text-center text-sm text-ink/65">Aucun avis ne correspond à ces filtres.</p>}
 
           {visible < filtered.length && (
             <div className="mt-8 text-center">
@@ -318,7 +332,7 @@ function ReviewCard({
   // Add our own counted vote until the server count catches up with it
   const helpful = r.helpful + (vote?.sent && r.helpful === vote.base ? 1 : 0);
   return (
-    <article className="mb-5 break-inside-avoid rounded-2xl border border-forest/10 bg-white p-6 shadow-[0_1px_2px_rgba(35,49,41,0.04)]">
+    <article className="mb-5 break-inside-avoid rounded-2xl border border-forest/10 bg-cream-soft p-6 shadow-[0_1px_2px_rgba(35,49,41,0.04)]">
       <header className="flex items-start gap-3">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-sand font-serif text-base text-forest">{initials(r.author)}</span>
         <div className="min-w-0 flex-1">
@@ -331,9 +345,9 @@ function ReviewCard({
               </span>
             )}
           </div>
-          {r.city && <p className="mt-0.5 text-xs text-ink/45">{r.city}</p>}
+          {r.city && <p className="mt-0.5 text-xs text-ink/65">{r.city}</p>}
         </div>
-        <time dateTime={r.date} className="shrink-0 text-xs text-ink/45">
+        <time dateTime={r.date} className="shrink-0 text-xs text-ink/65">
           {formatDate(r.date)}
         </time>
       </header>
@@ -359,7 +373,7 @@ function ReviewCard({
       )}
 
       {product && (
-        <a href="#produits" className="mt-4 flex items-center gap-2.5 rounded-lg bg-cream px-3 py-2 text-xs text-ink/60 transition-colors hover:text-forest">
+        <a href="#produits" className="mt-4 flex items-center gap-2.5 rounded-lg bg-sand/50 px-3 py-2 text-xs text-ink/65 transition-colors hover:bg-sand hover:text-forest">
           <Image src={product.image.url} alt="" width={product.image.width} height={product.image.height} sizes="20px" className="h-7 w-auto" />
           <span className="truncate">{product.name}</span>
         </a>
@@ -372,7 +386,7 @@ function ReviewCard({
         </div>
       )}
 
-      <footer className="mt-5 flex items-center justify-between border-t border-forest/10 pt-4 text-xs text-ink/50">
+      <footer className="mt-5 flex items-center justify-between border-t border-forest/10 pt-4 text-xs text-ink/65">
         <span>Cet avis vous a-t-il été utile ?</span>
         <div className="flex gap-1">
           <VoteButton active={vote?.dir === "up"} onClick={() => onVote(r, "up")} label="Utile">
@@ -485,14 +499,14 @@ function Lightbox({
               <span className="flex size-10 items-center justify-center rounded-full bg-sand font-serif text-forest">{initials(current.review.author)}</span>
               <div>
                 <p className="text-sm font-medium text-forest">{current.review.author}</p>
-                <p className="text-xs text-ink/45">{[current.review.city, formatDate(current.review.date)].filter(Boolean).join(" · ")}</p>
+                <p className="text-xs text-ink/65">{[current.review.city, formatDate(current.review.date)].filter(Boolean).join(" · ")}</p>
               </div>
             </div>
             <Stars rating={current.review.rating} size="size-4" className="mt-5" />
             {current.review.title && <p className="mt-2 font-semibold text-forest">{current.review.title}</p>}
             <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink/70">{current.review.body}</p>
             {productBySlug.get(current.review.product) && (
-              <p className="mt-5 text-xs text-ink/50">Produit : {productBySlug.get(current.review.product)!.name}</p>
+              <p className="mt-5 text-xs text-ink/65">Produit : {productBySlug.get(current.review.product)!.name}</p>
             )}
           </div>
         </div>
@@ -612,7 +626,7 @@ function WriteReviewDialog({ open, onClose, products, whatsappNumber }: { open: 
 
   const labels = ["", "Décevant", "Moyen", "Bien", "Très bien", "Excellent"];
   const shown = hover || rating;
-  const field = "w-full rounded-xl border border-forest/15 bg-white px-4 py-3 text-sm outline-none focus:border-forest";
+  const field = "w-full rounded-xl border border-forest/15 bg-cream-soft px-4 py-3 text-sm outline-none transition-colors focus:border-forest";
 
   return (
     <dialog
@@ -661,7 +675,7 @@ function WriteReviewDialog({ open, onClose, products, whatsappNumber }: { open: 
                     </button>
                   ))}
                 </div>
-                <span className="text-sm text-ink/60">{labels[shown]}</span>
+                <span className="text-sm text-ink/65">{labels[shown]}</span>
               </div>
             </div>
 
@@ -713,7 +727,7 @@ function WriteReviewDialog({ open, onClose, products, whatsappNumber }: { open: 
             <div>
               <span className="mb-2 flex justify-between text-xs font-medium text-forest/80">
                 Photos ou vidéos
-                <span className="font-normal text-ink/40">
+                <span className="font-normal text-ink/65">
                   {files.length}/{MAX_FILES} · {(totalBytes / 1024 / 1024).toFixed(1)} / 4 Mo
                 </span>
               </span>
@@ -753,7 +767,7 @@ function WriteReviewDialog({ open, onClose, products, whatsappNumber }: { open: 
                   </label>
                 )}
               </div>
-              <p className="mt-2 text-[0.7rem] text-ink/45">
+              <p className="mt-2 text-[0.7rem] text-ink/65">
                 Vidéo trop lourde ?{" "}
                 <a href={whatsappLink(whatsappNumber, "Bonjour Desart Solis, voici une vidéo pour mon avis :")} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
                   Envoyez-la sur WhatsApp
@@ -775,7 +789,7 @@ function WriteReviewDialog({ open, onClose, products, whatsappNumber }: { open: 
             >
               {status === "sending" ? "Envoi…" : "Publier mon avis"}
             </button>
-            <p className="text-center text-xs text-ink/45">Publié après vérification par notre équipe</p>
+            <p className="text-center text-xs text-ink/65">Publié après vérification par notre équipe</p>
           </form>
         )}
       </div>
@@ -807,7 +821,7 @@ function VoteButton({ active, onClick, label, children }: { active: boolean; onC
       onClick={onClick}
       aria-pressed={active}
       aria-label={label}
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 tabular-nums transition-colors ${active ? "bg-forest text-cream" : "hover:bg-sand"}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 nums transition-colors ${active ? "bg-forest text-cream" : "hover:bg-sand"}`}
     >
       {children}
     </button>

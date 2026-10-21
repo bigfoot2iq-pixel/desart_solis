@@ -121,9 +121,9 @@ export function AddToOrderButton({ product }: { product: Product }) {
   const qty = lines[product.slug] ?? 0;
   return (
     <div className="mt-auto flex items-center justify-between gap-4 border-t border-forest/10 pt-6">
-      <span className="font-serif text-2xl text-forest">{formatDh(product.price)}</span>
+      <span className="font-serif text-2xl nums text-forest">{formatDh(product.price)}</span>
       {product.soldOut ? (
-        <span className="eyebrow rounded-full border border-forest/15 px-5 py-3 text-forest/45">Rupture de stock</span>
+        <span className="eyebrow rounded-full border border-forest/15 px-5 py-3 text-forest/60">Rupture de stock</span>
       ) : (
         <button
           type="button"
@@ -168,7 +168,7 @@ export function OrderBar() {
         <span className="whitespace-nowrap">
           {toast} <span className="text-cream/60">ajouté</span>
         </span>
-        <button type="button" onClick={scrollToOrder} className="eyebrow ml-2 text-gold underline-offset-4 hover:underline">
+        <button type="button" onClick={scrollToOrder} className="eyebrow ml-2 py-1.5 text-gold underline-offset-4 hover:underline">
           Commander
         </button>
       </div>
@@ -180,10 +180,10 @@ export function OrderBar() {
       >
         <div className="flex items-center justify-between gap-4">
           <div className="text-sm">
-            <p className="text-ink/60">
+            <p className="text-ink/65">
               {count} article{count > 1 ? "s" : ""}
             </p>
-            <p className="font-serif text-xl text-forest">{formatDh(subtotal)}</p>
+            <p className="font-serif text-xl nums text-forest">{formatDh(subtotal)}</p>
           </div>
           <button type="button" onClick={scrollToOrder} className="eyebrow rounded-full bg-forest px-7 py-3.5 text-cream">
             Finaliser

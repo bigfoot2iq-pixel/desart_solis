@@ -1,51 +1,142 @@
 @import "tailwindcss";
 
 @theme inline {
+  /* Desart Solis palette — see the brand board (public/brand/branding-board.webp) */
   --color-cream: #f3f0ec;
+  --color-cream-soft: #faf8f5;
   --color-sand: #e8e1d6;
   --color-sand-deep: #d9cfbf;
+  --color-sand-warm: #efe9de;
   --color-forest: #233129;
   --color-forest-soft: #2e3f35;
+  --color-forest-deep: #1a251e;
   --color-gold: #ceaf6f;
-  --color-gold-deep: #b08a3e;
+  --color-gold-deep: #876829;
+  --color-gold-soft: #e5cd9a;
   --color-ink: #1c2420;
 
   --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
   --font-sans: var(--font-montserrat), "Montserrat", system-ui, sans-serif;
 
   --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-body {
-  background: var(--color-cream);
-  color: var(--color-ink);
-  font-family: var(--font-sans);
-  font-variant-numeric: lining-nums;
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-variant-numeric: lining-nums;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: var(--color-gold);
+    color: var(--color-forest);
+  }
+
+  /* One consistent focus treatment across the whole site */
+  :focus-visible {
+    outline: 2px solid var(--color-gold-deep);
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Native controls should inherit the brand, not the UA default */
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+    color: inherit;
+  }
 }
 
-::selection {
-  background: var(--color-gold);
-  color: var(--color-forest);
-}
+/* ——— Brand utilities ——— */
 
-/* Metallic gold, matching the logo foil */
-.text-foil {
-  background: linear-gradient(100deg, #b8913f 0%, #e9c879 35%, #c49a45 60%, #f0d08a 85%, #b8913f 100%);
+/* Metallic gold, matching the logo foil.
+   On light surfaces the gradient is the deep antique tone (4.5:1 on cream);
+   `text-foil-bright` is the luminous version for dark surfaces. */
+@utility text-foil {
+  background: linear-gradient(100deg, #876829 0%, #9f7d33 32%, #90702c 55%, #9f7d33 78%, #876829 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-.bg-foil {
+@utility text-foil-bright {
+  background: linear-gradient(100deg, #d9b56b 0%, #f0d08a 35%, #c9a24f 60%, #f5dda0 85%, #d9b56b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility bg-foil {
   background: linear-gradient(100deg, #b8913f 0%, #e3c072 40%, #c49a45 70%, #e9c879 100%);
 }
 
 /* Eyebrow label: spaced small caps like the "SKIN • HAIR • CARE" lockup */
-.eyebrow {
+@utility eyebrow {
   font-size: 0.6875rem;
-  letter-spacing: 0.32em;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
   font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Moroccan arch: a soft dome on top, flat on the bottom */
+@utility arch {
+  border-radius: 9999px 9999px 0 0;
+}
+
+/* Hairline rule that fades out at both ends */
+@utility rule-gold {
+  background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
+}
+
+/* Paper grain — adds a tactile, printed quality to large flat surfaces */
+@utility grain {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.04;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+/* Display headline: large serif with slightly negative tracking */
+@utility display {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  letter-spacing: -0.015em;
+  line-height: 1.04;
+}
+
+/* Lining + tabular figures. Cormorant defaults to oldstyle, and `tabular-nums`
+   alone would reset `lining-nums`, so the two are always set together. */
+@utility nums {
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
 /* Scroll reveal — progressive enhancement, no JS */
@@ -54,7 +145,7 @@ body {
     .reveal {
       animation: reveal linear both;
       animation-timeline: view();
-      animation-range: entry 0% entry 45%;
+      animation-range: entry 0% entry 42%;
     }
   }
 }
@@ -62,7 +153,7 @@ body {
 @keyframes reveal {
   from {
     opacity: 0;
-    transform: translateY(28px);
+    transform: translateY(22px);
   }
   to {
     opacity: 1;
@@ -74,14 +165,20 @@ body {
   .float {
     animation: float 7s var(--ease-soft) infinite alternate;
   }
+
   .float-delay {
     animation-delay: -3.5s;
   }
 }
 
-@keyframes float {
-  to {
-    transform: translateY(-10px);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

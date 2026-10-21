@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://desartbarber.shop"),
   title: "Desart Solis — Skin · Hair · Care",
   description:
-    "Soins visage, cheveux et barbe à l’huile d’argan du Maroc. Face Wash Miel & B5, Gommage Visage et Sérum à la protéine végétale.",
+    "Soins visage, corps, cheveux et barbe à l’huile d’argan du Maroc. Face Wash Miel & B5, Gommage Visage, Sérum à la protéine végétale et Gel Douche Caramel.",
   openGraph: {
     title: "Desart Solis — Skin · Hair · Care",
     description: "Soins à l’huile d’argan du Maroc. Commande sur WhatsApp, paiement à la livraison.",
