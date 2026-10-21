@@ -1,26 +1,94 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-cream: #f3f0ec;
+  --color-sand: #e8e1d6;
+  --color-sand-deep: #d9cfbf;
+  --color-forest: #233129;
+  --color-forest-soft: #2e3f35;
+  --color-gold: #ceaf6f;
+  --color-gold-deep: #b08a3e;
+  --color-ink: #1c2420;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  --font-sans: var(--font-montserrat), "Montserrat", system-ui, sans-serif;
+
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-variant-numeric: lining-nums;
+}
+
+::selection {
+  background: var(--color-gold);
+  color: var(--color-forest);
+}
+
+/* Metallic gold, matching the logo foil */
+.text-foil {
+  background: linear-gradient(100deg, #b8913f 0%, #e9c879 35%, #c49a45 60%, #f0d08a 85%, #b8913f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-foil {
+  background: linear-gradient(100deg, #b8913f 0%, #e3c072 40%, #c49a45 70%, #e9c879 100%);
+}
+
+/* Eyebrow label: spaced small caps like the "SKIN • HAIR • CARE" lockup */
+.eyebrow {
+  font-size: 0.6875rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* Scroll reveal — progressive enhancement, no JS */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 45%;
+    }
+  }
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .float {
+    animation: float 7s var(--ease-soft) infinite alternate;
+  }
+  .float-delay {
+    animation-delay: -3.5s;
+  }
+}
+
+@keyframes float {
+  to {
+    transform: translateY(-10px);
+  }
+}
+
+details summary::-webkit-details-marker {
+  display: none;
+}
+
+details[open] .faq-icon {
+  transform: rotate(45deg);
 }

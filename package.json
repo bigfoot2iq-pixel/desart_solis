@@ -6,14 +6,19 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "studio": "pnpm --filter desart-solis-studio dev",
+    "studio:deploy": "pnpm --filter desart-solis-studio run deploy",
+    "typegen": "pnpm --filter desart-solis-studio run typegen"
   },
   "dependencies": {
     "next": "16.4.2",
+    "next-sanity": "13.3.4",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@sanity/client": "8.9.0",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

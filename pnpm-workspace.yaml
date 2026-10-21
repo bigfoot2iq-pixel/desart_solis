@@ -1,3 +1,6 @@
+packages:
+  - studio
+
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
