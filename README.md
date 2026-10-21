@@ -49,7 +49,7 @@ Products are cached through `sanity/live.ts` and revalidated automatically when 
 
 ```
 app/
-  _components/   cart, order builder, reviews widget, mobile nav
+  _components/   cart, order builder, reviews widget, mobile nav, range rail
   _data.ts       static brand copy (ritual, ingredients, promises, values)
   _lib/          catalogue fetching, shared types, rate limiting
   api/           review submission endpoints
@@ -61,11 +61,52 @@ studio/          Sanity Studio (schema types, structure)
 scripts/         content migrations + the hero range builder
 ```
 
+## The range section
+
+The range is a catalogue, not a shop: each product is a column with the bottle
+standing on the baseline of the row, and only what a customer needs to choose
+it — name, size, price and the add control. The long copy lives in the order
+builder, where the visitor is actually shopping.
+
+Below `lg` the four columns become a snap rail (`_components/range-rail.tsx`):
+the cards stay small, the next one peeks in, and the section keeps its height
+instead of stacking four tall products. Swiping moves the rail card by card —
+the rail keeps `touch-action: auto` so the browser picks the axis from the
+gesture and a vertical swipe still scrolls the page — and the dashes below
+only mirror the position. The rail owns the scrolling and the position
+indicator only; the cards are rendered on the server and handed over as
+children.
+
+The add button becomes a `− qty +` stepper as soon as the product is in the cart.
+
+The bottles are sized from `productShare` in `app/page.tsx` — the same map the
+hero strip uses — so a product never changes size between the two sections.
+
+## The order section
+
+The order section is a two-column layout on desktop: the selection and the
+address on the left, the summary pinned on the right.
+
+On a phone it is a guided flow instead, because a single column puts the total
+two screens below the products and leaves two different amounts on screen at
+once (the site-wide cart bar showed a subtotal, the summary a total):
+
+1. **Choix** — the packs and the individual care.
+2. **Livraison** — name, WhatsApp number, city, address.
+3. **Récap** — the summary and the WhatsApp hand-off.
+
+A sticky rail under the header shows the three steps and lets the visitor jump
+back; an action bar pinned to the bottom carries the live amount and the next
+action, and it replaces the site-wide cart bar while the section is on screen
+(`useSectionActive` in `_components/use-section-active.ts` owns that handover).
+Leaving a step validates it, so the flow cannot reach the summary with an
+empty basket or a half-filled address.
+
 ## Adding a product
 
 1. Upload a transparent cutout (PNG/WebP) as the product image in Studio.
 2. Create the product document: set `name`, `slug`, `price`, `size`, `category`, `availability`.
-3. Optionally set `badge` (e.g. `Nouveau`) — it renders as a pill on the product card.
+3. Optionally set `badge` (e.g. `Nouveau`) — it renders as a gold label above the product.
 4. Add the slug to a `pack` if it belongs to a bundle.
 5. Re-cut the product so it can join the hero range:
 
@@ -74,11 +115,12 @@ scripts/         content migrations + the hero range builder
    python scripts/build-range.py new-product.webp # or just the new one
    ```
 
-   Then add it to the `range` array in `app/page.tsx` with its pixel size and
-   the share of the strip height it should stand at.
+   Then add it to the `range` array in `app/page.tsx` with its pixel size, and
+   give it a `share` in `productShare` — the part of the strip height it should
+   stand at. The range section reads the same map, so both stay in step.
 
-Product photos are displayed with `object-contain` on a warm sand panel, so a transparent
-background is required. Editorial photography (used in the story section) lives in `public/brand/`.
+Product photos are displayed with `object-contain` inside a framed plate on the page cream, so a
+transparent background is required. Editorial photography (used in the story section) lives in `public/brand/`.
 
 ### The hero range
 

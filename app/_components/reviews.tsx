@@ -209,7 +209,7 @@ export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: 
       {/* Customer media strip */}
       {allMedia.length > 0 && (
         <div className="mt-10">
-          <p className="eyebrow text-forest/60">Photos & vidéos clients</p>
+          <p className="eyebrow text-forest/70">Photos & vidéos clients</p>
           <div className="-mx-4 mt-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:thin] sm:mx-0 sm:px-0">
             {allMedia.map((m, i) => (
               <button
@@ -751,7 +751,7 @@ function WriteReviewDialog({ open, onClose, products, whatsappNumber }: { open: 
                   </div>
                 ))}
                 {files.length < MAX_FILES && (
-                  <label className="flex size-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-forest/25 text-forest/60 transition-colors hover:border-forest hover:text-forest">
+                  <label className="flex size-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-forest/25 text-forest/70 transition-colors hover:border-forest hover:text-forest">
                     <CameraIcon className="size-5" />
                     <span className="text-[0.6rem]">Ajouter</span>
                     <input

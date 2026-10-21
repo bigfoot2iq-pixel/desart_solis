@@ -10,7 +10,7 @@
   --color-forest: #233129;
   --color-forest-soft: #2e3f35;
   --color-gold: #ceaf6f;
-  --color-gold-deep: #876829;
+  --color-gold-deep: #806224;
   --color-ink: #1c2420;
 
   --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
@@ -184,6 +184,23 @@
   from {
     opacity: 0;
     transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Small elements that appear in place — the quantity stepper replacing the
+   add button, for instance. */
+@utility rise {
+  animation: rise 0.45s var(--ease-soft) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
   }
   to {
     opacity: 1;

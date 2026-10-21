@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { formatDh } from "../_data";
 import type { Catalog, Pack, Product } from "../_lib/types";
+import { useSectionActive } from "./use-section-active";
 
 const STORAGE_KEY = "desart-cart-v2";
 const MAX_QTY = 20;
@@ -112,28 +113,62 @@ export function useCart() {
   return ctx;
 }
 
+/** Fired when the visitor asks to go to the order section. */
+export const OPEN_ORDER_EVENT = "desart:open-order";
+
 export function scrollToOrder() {
   document.getElementById("commande")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.dispatchEvent(new Event(OPEN_ORDER_EVENT));
 }
 
 export function AddToOrderButton({ product }: { product: Product }) {
-  const { add, lines } = useCart();
+  const { add, setQty, lines } = useCart();
   const qty = lines[product.slug] ?? 0;
+
+  if (product.soldOut) {
+    return (
+      <span className="eyebrow shrink-0 rounded-full border border-forest/15 px-4 py-2.5 text-forest/55">
+        Rupture de stock
+      </span>
+    );
+  }
+
+  // Nothing in the cart yet: a single, quiet call to action.
+  if (qty === 0) {
+    return (
+      <button
+        type="button"
+        onClick={() => add(product.slug)}
+        className="eyebrow group/btn inline-flex shrink-0 items-center gap-2.5 rounded-full border border-forest/25 px-5 py-2.5 text-forest transition-colors duration-300 hover:border-forest hover:bg-forest hover:text-cream"
+      >
+        Ajouter
+        <Plus className="size-3.5 transition-transform duration-500 ease-soft group-hover/btn:rotate-90" />
+      </button>
+    );
+  }
+
+  // In the cart: the button becomes a − qty + stepper.
   return (
-    <div className="mt-auto flex items-center justify-between gap-4 border-t border-forest/10 pt-6">
-      <span className="font-serif text-2xl nums text-forest">{formatDh(product.price)}</span>
-      {product.soldOut ? (
-        <span className="eyebrow rounded-full border border-forest/15 px-5 py-3 text-forest/60">Rupture de stock</span>
-      ) : (
-        <button
-          type="button"
-          onClick={() => add(product.slug)}
-          className="eyebrow group/btn inline-flex items-center gap-3 rounded-full border border-forest px-5 py-3 text-forest transition-colors duration-300 hover:bg-forest hover:text-cream"
-        >
-          {qty > 0 ? `Ajouté · ${qty}` : "Ajouter"}
-          <Plus className="size-3.5 transition-transform duration-500 ease-soft group-hover/btn:rotate-90" />
-        </button>
-      )}
+    <div className="rise flex shrink-0 items-center gap-1 rounded-full border border-forest/20 bg-cream-soft p-1">
+      <button
+        type="button"
+        onClick={() => setQty(product.slug, qty - 1)}
+        aria-label={`Retirer un ${product.name}`}
+        className="flex size-8 items-center justify-center rounded-full text-forest transition-colors duration-300 hover:bg-forest hover:text-cream"
+      >
+        <Minus className="size-3.5" />
+      </button>
+      <span className="w-6 text-center text-sm font-medium nums text-forest" aria-live="polite">
+        {qty}
+      </span>
+      <button
+        type="button"
+        onClick={() => add(product.slug)}
+        aria-label={`Ajouter un ${product.name}`}
+        className="flex size-8 items-center justify-center rounded-full text-forest transition-colors duration-300 hover:bg-forest hover:text-cream"
+      >
+        <Plus className="size-3.5" />
+      </button>
     </div>
   );
 }
@@ -142,6 +177,10 @@ export function AddToOrderButton({ product }: { product: Product }) {
 export function OrderBar() {
   const { count, subtotal, lastAdded, items } = useCart();
   const [toast, setToast] = useState<string | null>(null);
+  /* Inside the order section the section owns the bar: it carries the live
+     total and the next action. Two bars with two different amounts is how a
+     phone shopper gets lost. */
+  const inOrderSection = useSectionActive("commande");
 
   useEffect(() => {
     if (!lastAdded) return;
@@ -175,7 +214,7 @@ export function OrderBar() {
 
       <div
         className={`fixed inset-x-0 bottom-0 z-50 border-t border-forest/10 bg-cream/95 px-4 py-3 backdrop-blur-md transition-transform duration-500 ease-soft lg:hidden ${
-          count > 0 ? "translate-y-0" : "translate-y-full"
+          count > 0 && !inOrderSection ? "translate-y-0" : "translate-y-full"
         }`}
       >
         <div className="flex items-center justify-between gap-4">

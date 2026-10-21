@@ -3,8 +3,9 @@ import { AddToOrderButton, CartProvider, OrderBar } from "./_components/cart";
 import { CartIndicator } from "./_components/cart-indicator";
 import { MobileNav, type NavItem } from "./_components/mobile-nav";
 import { OrderBuilder } from "./_components/order-builder";
+import { RangeRail } from "./_components/range-rail";
 import { ReviewsWidget } from "./_components/reviews";
-import { promises, ritual, values, whatsappLink } from "./_data";
+import { formatDh, promises, ritual, values, whatsappLink } from "./_data";
 import { getHomeContent } from "./_lib/catalog";
 import type { Faq as FaqItem, Product, Review, Settings } from "./_lib/types";
 
@@ -108,6 +109,18 @@ function Header() {
 
 /* ——— Hero ——— */
 
+/* How tall each product stands relative to the tallest one. The product
+   photos are shot at different scales, so the pixel height alone would make
+   the 400 ml pump bottle look like the shortest product on the shelf. These
+   shares reproduce the real pack sizes and are shared by the hero strip and
+   the range grid, so a product never changes size between the two. */
+const productShare: Record<string, number> = {
+  "face-wash": 0.88,
+  gommage: 0.72,
+  "gel-douche": 0.94,
+  serum: 0.78,
+};
+
 /* The range is composed from the four real cutouts instead of one baked band.
    A single raster can only carry one aspect ratio, so every viewport that did
    not match it cropped the range: wide screens sliced the tops off the tall
@@ -116,14 +129,12 @@ function Header() {
    transparent they stand straight on the page cream, so there is no image
    edge left to seam against the hero.
 
-   `w`/`h` are the cutout's own pixels; `share` is how tall it stands relative
-   to the strip, which reproduces the real pack sizes (the 400 ml bottle is
-   the tallest, the 250 g tube the shortest). */
+   `w`/`h` are the cutout's own pixels; the height comes from `productShare`. */
 const range = [
-  { src: "/brand/range/face-wash.webp", w: 376, h: 1360, share: 0.88, name: "Face Wash Miel & B5" },
-  { src: "/brand/range/gommage.webp", w: 632, h: 1315, share: 0.72, name: "Gommage Visage" },
-  { src: "/brand/range/gel-douche.webp", w: 440, h: 1099, share: 0.94, name: "Gel Douche Caramel" },
-  { src: "/brand/range/serum.webp", w: 480, h: 1491, share: 0.78, name: "Sérum Cheveux & Barbe" },
+  { src: "/brand/range/face-wash.webp", w: 376, h: 1360, slug: "face-wash", name: "Face Wash Miel & B5" },
+  { src: "/brand/range/gommage.webp", w: 632, h: 1315, slug: "gommage", name: "Gommage Visage" },
+  { src: "/brand/range/gel-douche.webp", w: 440, h: 1099, slug: "gel-douche", name: "Gel Douche Caramel" },
+  { src: "/brand/range/serum.webp", w: 480, h: 1491, slug: "serum", name: "Sérum Cheveux & Barbe" },
 ];
 
 function Hero() {
@@ -186,7 +197,7 @@ function HeroRange() {
           <div
             key={p.src}
             className="relative shrink-0"
-            style={{ height: `${p.share * 100}%`, width: `${((p.share * p.w) / p.h) * 100}cqh` }}
+            style={{ height: `${(productShare[p.slug] ?? 1) * 100}%`, width: `${(((productShare[p.slug] ?? 1) * p.w) / p.h) * 100}cqh` }}
           >
             {/* contact shadow so the product sits on the floor instead of floating */}
             <span
@@ -239,66 +250,87 @@ function Promises() {
 
 /* ——— Range ——— */
 
+/* The range reads as a catalogue, not a shop: one product per column, the
+   bottle standing on a shared baseline, and only the information needed to
+   choose it — name, size, price and the add control. The longer copy lives
+   in the order builder, where a customer is actually shopping.
+
+   Below lg the four columns become a snap rail: the cards stay small and
+   the section keeps its height instead of stacking four tall products. */
 function Products({ products }: { products: Product[] }) {
   return (
-    <section id="produits" className="scroll-mt-24 px-4 py-20 sm:px-8 lg:py-24">
-      <div className="mx-auto max-w-7xl">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+    <section id="produits" className="scroll-mt-24 py-16 sm:py-20 lg:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="eyebrow text-gold-deep">La gamme</p>
-            <h2 className="display mt-5 text-[clamp(2rem,4vw,3.25rem)] text-forest">
+            <h2 className="display mt-4 text-[clamp(1.9rem,3.6vw,2.9rem)] text-forest">
               Peu de soins. <em className="text-foil font-normal">L’essentiel.</em>
             </h2>
           </div>
-          <p className="max-w-sm text-[0.95rem] leading-relaxed text-ink/65">
+          <p className="max-w-sm text-[0.9rem] leading-relaxed text-ink/70">
             Une routine courte et efficace, du nettoyage du visage à la brillance des cheveux et de la barbe.
           </p>
         </div>
 
-        <div className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:mt-20 lg:grid-cols-4 lg:gap-x-7">
+        <RangeRail>
           {products.map((p) => (
             <ProductCard key={p.slug} product={p} />
           ))}
-        </div>
+        </RangeRail>
       </div>
     </section>
   );
 }
 
 function ProductCard({ product }: { product: Product }) {
+  const category = categoryLabels[product.category] ?? product.category;
+  // Same scale as the hero strip, so a product never changes size between sections.
+  const share = productShare[product.slug] ?? 1;
+
   return (
-    <article className="reveal group flex flex-col">
-      <div className="relative aspect-[4/5] overflow-hidden rounded-[1.5rem] bg-gradient-to-b from-sand-warm to-sand transition-colors duration-700 ease-soft group-hover:from-sand group-hover:to-sand-deep">
+    <article className="group flex w-[68vw] max-w-[16rem] shrink-0 snap-start flex-col sm:w-[42vw] lg:w-auto lg:max-w-none">
+      {/* The bottle stands on the baseline of the row, whatever its proportions. */}
+      <div className="relative flex h-[clamp(210px,64vw,260px)] items-end justify-center rounded-[1.25rem] border border-forest/12 bg-sand/35 p-4 lg:h-[clamp(215px,18vw,265px)]">
         {product.badge && (
-          <span className="bg-foil absolute left-4 top-4 z-10 rounded-full px-3 py-1.5 text-[0.58rem] font-medium uppercase tracking-[0.18em] text-forest">
-            {product.badge}
-          </span>
+          <span className="eyebrow absolute left-4 top-3 text-gold-deep">{product.badge}</span>
         )}
-        <span className="eyebrow absolute right-4 top-5 z-10 text-forest/60">{categoryLabels[product.category] ?? product.category}</span>
         <Image
           src={product.image.url}
           alt={product.image.alt}
-          fill
-          sizes="(min-width: 1024px) 19rem, (min-width: 640px) 45vw, 80vw"
-          className="object-contain p-9 drop-shadow-[0_16px_20px_rgba(35,49,41,0.16)] transition-transform duration-700 ease-soft group-hover:-translate-y-1.5 group-hover:scale-[1.04]"
+          width={product.image.width}
+          height={product.image.height}
+          sizes="(min-width: 1024px) 18rem, (min-width: 640px) 40vw, 70vw"
+          style={{ height: `${share * 100}%` }}
+          className="mx-auto w-auto max-w-full object-contain object-bottom drop-shadow-[0_10px_12px_rgba(35,49,41,0.16)] transition-transform duration-700 ease-soft group-hover:-translate-y-1.5"
         />
       </div>
 
-      <div className="flex flex-1 flex-col pt-6">
-        <div className="flex items-baseline justify-between gap-4">
-          <h3 className="font-serif text-[1.6rem] leading-tight text-forest">{product.name}</h3>
-          <span className="shrink-0 text-xs nums text-ink/65">{product.size}</span>
+      <div className="mt-5 flex flex-1 flex-col lg:mt-6">
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 className="font-serif text-[1.25rem] leading-tight text-forest sm:min-h-[2.5em] lg:text-[1.35rem]">
+            {product.name}
+          </h3>
+          <span className="shrink-0 text-[0.62rem] uppercase tracking-[0.16em] text-ink/65">
+            {product.size}
+            {category && <span className="hidden sm:inline"> · {category}</span>}
+          </span>
         </div>
-        {product.tagline && <p className="mt-1.5 font-serif text-lg italic text-gold-deep">{product.tagline}</p>}
-        <p className="mt-4 text-[0.85rem] leading-relaxed text-ink/65">{product.description}</p>
-        <ul className="mt-5 flex flex-wrap gap-2">
-          {product.notes.map((n) => (
-            <li key={n} className="rounded-full border border-forest/12 px-3 py-1 text-[0.68rem] text-forest/65">
-              {n}
-            </li>
-          ))}
-        </ul>
-        <AddToOrderButton product={product} />
+
+        {product.tagline && (
+          <p className="mb-5 mt-2 font-serif text-[0.95rem] italic text-gold-deep">{product.tagline}</p>
+        )}
+
+        {/* `sm:line-clamp-2` also carries the display, so the paragraph can’t be
+            shown as a plain block at the same breakpoint. */}
+        <p className="mb-5 mt-3 hidden text-[0.8rem] leading-relaxed text-ink/70 sm:line-clamp-2">
+          {product.description}
+        </p>
+
+        <div className="mt-auto flex items-center justify-between gap-3 border-t border-forest/10 pt-4">
+          <span className="font-serif text-[1.3rem] nums text-forest">{formatDh(product.price)}</span>
+          <AddToOrderButton product={product} />
+        </div>
       </div>
     </article>
   );
@@ -325,8 +357,8 @@ function Ritual() {
             <li key={r.step} className="reveal relative pt-5">
               <span className="rule-gold absolute inset-x-0 top-0 h-px" aria-hidden />
               <div className="flex items-baseline gap-3">
-                <span className="font-serif text-2xl font-light leading-none text-gold/70">{r.step}</span>
-                <span className="eyebrow text-gold/70">{r.area}</span>
+                <span className="font-serif text-2xl font-light leading-none text-gold/80">{r.step}</span>
+                <span className="eyebrow text-gold/80">{r.area}</span>
               </div>
               <h3 className="mt-3 font-serif text-2xl font-light">{r.title}</h3>
               <p className="mt-2 text-[0.82rem] leading-relaxed text-cream/60">{r.text}</p>
