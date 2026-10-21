@@ -102,6 +102,15 @@ action, and it replaces the site-wide cart bar while the section is on screen
 Leaving a step validates it, so the flow cannot reach the summary with an
 empty basket or a half-filled address.
 
+The city is not a plain `<select>` on a phone. A native select hands the choice
+to the OS picker, where sixteen options read as flat "Casablanca — 20 DH"
+strings with the fee buried in the middle and no way to filter.
+`_components/city-picker.tsx` replaces it with a bottom sheet: the cities are
+listed with their fee on the right, the list is filtered as you type, and the
+sheet keeps the brand typography. A wide screen keeps the native select — one
+line, keyboard friendly, and no JavaScript at all. The delivery fee is then
+stated under the field, so the closed control only has to confirm the choice.
+
 ## Adding a product
 
 1. Upload a transparent cutout (PNG/WebP) as the product image in Studio.

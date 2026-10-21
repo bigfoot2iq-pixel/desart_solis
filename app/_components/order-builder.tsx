@@ -1,9 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatDh, whatsappLink } from "../_data";
 import { Check, Minus, OPEN_ORDER_EVENT, Plus, packPrice, useCart } from "./cart";
+import { CityPicker } from "./city-picker";
+import { Field, inputCls } from "./field";
 import { useSectionActive } from "./use-section-active";
 
 const PHONE_RE = /^(?:\+212|00212|0)[5-7]\d{8}$/;
@@ -90,12 +92,18 @@ export function OrderBuilder() {
      summary if everything is already filled in. */
   useEffect(() => {
     function open() {
+      /* A confirmation on screen means the last order is done: asking for the
+         order section again starts a fresh one. */
+      if (sent) {
+        setSent(false);
+        setTouched(false);
+      }
       setStep(count === 0 ? 1 : deliveryValid ? 3 : 2);
       focusRail();
     }
     window.addEventListener(OPEN_ORDER_EVENT, open);
     return () => window.removeEventListener(OPEN_ORDER_EVENT, open);
-  }, [count, deliveryValid]);
+  }, [count, deliveryValid, sent]);
 
   /**
    * Leaving a step validates it first, so nothing is skipped silently: the
@@ -119,8 +127,14 @@ export function OrderBuilder() {
     focusRail();
   }
 
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
+  /**
+   * Hands the order to WhatsApp, then empties the section.
+   *
+   * The command is on its way, so the visitor is met with a confirmation and
+   * an empty order form — a new order is one tap away, with nothing left over
+   * from the previous one.
+   */
+  function sendOrder() {
     setTouched(true);
     if (!valid) {
       // Send the visitor straight to the step that still needs work.
@@ -130,6 +144,67 @@ export function OrderBuilder() {
     }
     window.open(whatsappLink(whatsappNumber, buildMessage()), "_blank", "noopener,noreferrer");
     setSent(true);
+    clear();
+    setForm(emptyForm);
+    setStep(1);
+  }
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    sendOrder();
+  }
+
+  /**
+   * Enter in a field must not send the order.
+   *
+   * On a phone the keyboard's "Done" key is an Enter: without this, closing
+   * the address field would launch WhatsApp with an order the visitor never
+   * confirmed. The button is the only way out.
+   */
+  function stopEnterSubmit(e: React.KeyboardEvent<HTMLFormElement>) {
+    if (e.key !== "Enter") return;
+    const el = e.target as HTMLElement;
+    if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") e.preventDefault();
+  }
+
+  /** Back to an empty order, ready for the next one. */
+  function startNewOrder() {
+    setSent(false);
+    setTouched(false);
+    setStep(1);
+    focusRail();
+  }
+
+  /* The order is on its way. The section says so and waits for the next one:
+     the basket and the address are already empty, so starting again is a
+     single tap on "Choix". */
+  if (sent) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <div
+          role="status"
+          className="grain relative overflow-hidden rounded-[1.75rem] bg-forest p-8 text-cream sm:p-10"
+        >
+          <div className="relative">
+            <span className="flex size-12 items-center justify-center rounded-full bg-foil text-forest">
+              <Check className="size-6" />
+            </span>
+            <h3 className="mt-6 font-serif text-3xl font-light sm:text-4xl">Commande envoyée.</h3>
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-cream/70">
+              Votre commande est partie sur WhatsApp. Envoyez le message pour nous la confirmer — nous répondons très vite.
+            </p>
+            <button
+              type="button"
+              onClick={startNewOrder}
+              className="eyebrow bg-foil mt-8 inline-flex items-center justify-center gap-3 whitespace-nowrap rounded-full px-7 py-4 text-forest transition-[filter] duration-300 hover:brightness-110"
+            >
+              Nouvelle commande
+              <ArrowIcon className="size-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   /* The summary. Rendered twice — once in the desktop column, once as the
@@ -202,7 +277,8 @@ export function OrderBuilder() {
         {/* The mobile action bar carries the call to action, so this one is
             only shown in the desktop column. */}
         <button
-          type="submit"
+          type="button"
+          onClick={sendOrder}
           className="eyebrow bg-foil mt-7 hidden w-full items-center justify-center gap-3 rounded-full py-4 text-forest transition-[filter,opacity] duration-300 hover:brightness-110 lg:flex"
         >
           <WhatsAppIcon className="size-4" />
@@ -210,11 +286,6 @@ export function OrderBuilder() {
         </button>
         {touched && !valid && (
           <p className="mt-3 text-center text-xs text-[#f0b9a5]">Complétez les champs indiqués pour continuer.</p>
-        )}
-        {sent && valid && (
-          <p className="mt-3 text-center text-xs text-cream/70">
-            WhatsApp s’est ouvert avec votre commande. Envoyez le message : nous confirmons très vite.
-          </p>
         )}
 
         <ul className="mt-8 grid grid-cols-2 gap-3 border-t border-cream/10 pt-6 text-xs text-cream/65">
@@ -235,7 +306,7 @@ export function OrderBuilder() {
           knows where they are and can jump back to a completed step. */}
       <div
         ref={railRef}
-        className="sticky top-16 z-30 -mx-4 mb-8 scroll-mt-20 border-y border-forest/10 bg-cream-soft/95 px-4 py-1.5 backdrop-blur-md sm:-mx-8 sm:px-8 lg:hidden"
+        className="sticky top-16 z-30 -mx-4 mb-6 mt-4 scroll-mt-20 border-y border-forest/10 bg-cream-soft/95 px-4 py-1.5 backdrop-blur-md sm:-mx-8 sm:px-8 lg:hidden"
       >
         <ol className="flex items-center gap-2">
           {STEPS.map((s, i) => {
@@ -281,6 +352,7 @@ export function OrderBuilder() {
       <form
         id="order-form"
         onSubmit={submit}
+        onKeyDown={stopEnterSubmit}
         noValidate
         className="grid gap-10 pb-24 lg:mt-16 lg:grid-cols-[1fr_23rem] lg:gap-12 lg:pb-0"
       >
@@ -463,23 +535,17 @@ export function OrderBuilder() {
                   )}
                 </Field>
                 <Field label="Ville" error={touched ? deliveryErrors.city : null}>
-                  {(id) => (
-                    <div className="relative">
-                      <select
-                        id={id}
-                        value={form.city}
-                        onChange={(e) => update("city", e.target.value)}
-                        className={`${inputCls} appearance-none pr-10`}
-                      >
-                        <option value="">Sélectionnez votre ville</option>
-                        {shipping.cities.map((c) => (
-                          <option key={c.name} value={c.name}>
-                            {c.name} — {formatDh(c.fee)}
-                          </option>
-                        ))}
-                      </select>
-                      <Chevron className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-forest/70" />
-                    </div>
+                  {(id, labelId) => (
+                    <CityPicker
+                      id={id}
+                      labelId={labelId}
+                      cities={shipping.cities}
+                      value={form.city}
+                      onChange={(v) => update("city", v)}
+                      error={touched ? deliveryErrors.city : null}
+                      freeFrom={freeFrom}
+                      freeShipping={freeShipping}
+                    />
                   )}
                 </Field>
                 <Field label="Adresse" error={touched ? deliveryErrors.address : null}>
@@ -545,9 +611,15 @@ export function OrderBuilder() {
             </div>
 
             {step === 3 ? (
+              /* Two keys on the two buttons: React swaps them instead of
+                 rewriting the one that was just tapped. Rewriting it would
+                 turn the "next step" button into a submit button before the
+                 browser runs the click, and the order would fly to WhatsApp
+                 from the step the visitor only asked to see. */
               <button
-                type="submit"
-                form="order-form"
+                key="send"
+                type="button"
+                onClick={sendOrder}
                 className="eyebrow bg-foil inline-flex shrink-0 items-center gap-2.5 rounded-full px-6 py-3.5 text-forest transition-[filter] duration-300 hover:brightness-110"
               >
                 <WhatsAppIcon className="size-4" />
@@ -555,6 +627,7 @@ export function OrderBuilder() {
               </button>
             ) : (
               <button
+                key="next"
                 type="button"
                 onClick={() => goToStep(step + 1)}
                 className="eyebrow inline-flex shrink-0 items-center gap-2 rounded-full bg-forest px-6 py-3.5 text-cream transition-colors duration-300 hover:bg-forest-soft"
@@ -576,10 +649,6 @@ export function OrderBuilder() {
   );
 }
 
-/* 16 px on a phone: anything smaller makes iOS zoom the page on focus. */
-const inputCls =
-  "w-full rounded-xl border border-forest/15 bg-cream-soft px-4 py-3.5 text-base text-ink outline-none transition-colors placeholder:text-ink/55 focus:border-forest sm:text-sm";
-
 function Step({ n, title, error, children }: { n: string; title: string; error?: string | null; children: React.ReactNode }) {
   return (
     <fieldset className="min-w-0">
@@ -592,20 +661,6 @@ function Step({ n, title, error, children }: { n: string; title: string; error?:
       {error && <p className="-mt-3 mb-5 text-xs text-[#b4533a]">{error}</p>}
       {children}
     </fieldset>
-  );
-}
-
-function Field({ label, optional, error, children }: { label: string; optional?: boolean; error?: string | null; children: (id: string) => React.ReactElement }) {
-  const id = useId();
-  return (
-    <div>
-      <label htmlFor={id} className="mb-2 flex justify-between text-xs font-medium text-forest/80">
-        {label}
-        {optional && <span className="font-normal text-ink/65">Facultatif</span>}
-      </label>
-      <div className={error ? "[&_input]:border-[#b4533a] [&_select]:border-[#b4533a]" : ""}>{children(id)}</div>
-      {error && <p className="mt-1.5 text-xs text-[#b4533a]">{error}</p>}
-    </div>
   );
 }
 
@@ -642,14 +697,6 @@ function Stepper({ value, onChange, label }: { value: number; onChange: (v: numb
         <Plus className="size-3.5" />
       </button>
     </div>
-  );
-}
-
-function Chevron({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" className={className} aria-hidden>
-      <path d="m6 9 6 6 6-6" />
-    </svg>
   );
 }
 
