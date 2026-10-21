@@ -58,7 +58,7 @@ app/
 public/brand/    logo lockups, product cutouts, editorial photography
 sanity/          client, live cache, GROQ queries
 studio/          Sanity Studio (schema types, structure)
-scripts/         content migrations + the hero image builder
+scripts/         content migrations + the hero range builder
 ```
 
 ## Adding a product
@@ -67,14 +67,32 @@ scripts/         content migrations + the hero image builder
 2. Create the product document: set `name`, `slug`, `price`, `size`, `category`, `availability`.
 3. Optionally set `badge` (e.g. `Nouveau`) — it renders as a pill on the product card.
 4. Add the slug to a `pack` if it belongs to a bundle.
-5. Re-render the hero family shot so the new product appears there too:
+5. Re-cut the product so it can join the hero range:
 
    ```bash
-   python scripts/build-hero.py   # needs Python 3 + Pillow + numpy
+   python scripts/build-range.py                 # re-cut all four (needs Python 3 + Pillow)
+   python scripts/build-range.py new-product.webp # or just the new one
    ```
+
+   Then add it to the `range` array in `app/page.tsx` with its pixel size and
+   the share of the strip height it should stand at.
 
 Product photos are displayed with `object-contain` on a warm sand panel, so a transparent
 background is required. Editorial photography (used in the story section) lives in `public/brand/`.
+
+### The hero range
+
+The four products in the hero are composited in the DOM from individual cutouts in
+`public/brand/range/`, not baked into one image. A single raster carries a single aspect
+ratio, so any other viewport crops the range — wide screens slice the tops off the tall
+bottles, narrow ones cut the outer products away. Each cutout is sized from the strip
+height alone (`cqh`), which keeps all four whole and standing on one baseline at every
+width. The cutouts must be trimmed tight or the products drift apart and break the
+baseline; `scripts/build-range.py` does that trimming.
+
+Because the cutouts are transparent they stand straight on the page cream, so there is no
+image edge to seam against the hero. The warm halo behind them fades to zero alpha before
+any edge, and the arch's uprights are masked so they dissolve instead of stopping.
 
 ## Design system
 Tokens live in `app/globals.css`:

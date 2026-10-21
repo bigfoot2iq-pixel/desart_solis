@@ -108,60 +108,104 @@ function Header() {
 
 /* ——— Hero ——— */
 
+/* The range is composed from the four real cutouts instead of one baked band.
+   A single raster can only carry one aspect ratio, so every viewport that did
+   not match it cropped the range: wide screens sliced the tops off the tall
+   bottles, narrow ones cut the outer products away entirely. Composing the
+   cutouts here keeps every product whole at any width - and because they are
+   transparent they stand straight on the page cream, so there is no image
+   edge left to seam against the hero.
+
+   `w`/`h` are the cutout's own pixels; `share` is how tall it stands relative
+   to the strip, which reproduces the real pack sizes (the 400 ml bottle is
+   the tallest, the 250 g tube the shortest). */
+const range = [
+  { src: "/brand/range/face-wash.webp", w: 376, h: 1360, share: 0.88, name: "Face Wash Miel & B5" },
+  { src: "/brand/range/gommage.webp", w: 632, h: 1315, share: 0.72, name: "Gommage Visage" },
+  { src: "/brand/range/gel-douche.webp", w: 440, h: 1099, share: 0.94, name: "Gel Douche Caramel" },
+  { src: "/brand/range/serum.webp", w: 480, h: 1491, share: 0.78, name: "Sérum Cheveux & Barbe" },
+];
+
 function Hero() {
   return (
     <section id="hero" className="relative isolate overflow-hidden">
       {/* Moorish arch — the brand's core motif, kept as a whisper */}
       <div
-        className="pointer-events-none absolute left-1/2 top-6 hidden h-[24rem] w-[46rem] -translate-x-1/2 rounded-t-full border-x border-t border-forest/10 lg:block"
+        className="arch-fade pointer-events-none absolute left-1/2 top-4 hidden h-[20rem] w-[42rem] -translate-x-1/2 rounded-t-full border-x border-t border-forest/10 lg:block"
         aria-hidden
       />
 
-      <div className="relative mx-auto max-w-3xl px-4 pt-12 text-center sm:px-8 lg:pt-14">
+      <div className="relative mx-auto max-w-3xl px-4 pt-8 text-center sm:px-8 lg:pt-10">
         <p className="eyebrow text-gold-deep">Skin · Hair · Care</p>
 
-        <h1 className="display mt-5 text-[clamp(2.5rem,5.8vw,4rem)] text-forest">
+        <h1 className="display mt-3.5 text-[clamp(2.25rem,4.6vw,3.25rem)] text-forest">
           L’éclat du désert,
           <br />
           <em className="text-foil font-normal">dans chaque geste.</em>
         </h1>
 
-        <p className="mx-auto mt-5 max-w-xl text-[0.95rem] leading-relaxed text-ink/65">
+        <p className="mx-auto mt-3.5 max-w-xl text-[0.9rem] leading-relaxed text-ink/65 sm:text-[0.95rem]">
           Quatre soins essentiels pour le visage, le corps, les cheveux et la barbe, formulés autour de l’huile d’argan
           du Maroc. Peu de produits, bien choisis.
         </p>
 
-        <div className="mt-8 flex flex-col items-center justify-center gap-1 sm:flex-row sm:gap-7">
+        <div className="mt-6 flex flex-col items-center justify-center gap-1 sm:flex-row sm:gap-7">
           <a
             href="#produits"
-            className="eyebrow rounded-full bg-forest px-8 py-4 text-center text-cream transition-colors duration-300 hover:bg-forest-soft"
+            className="eyebrow rounded-full bg-forest px-8 py-3.5 text-center text-cream transition-colors duration-300 hover:bg-forest-soft"
           >
             Découvrir la gamme
           </a>
-          <a href="#rituel" className="eyebrow group inline-flex items-center justify-center gap-3 py-4 text-forest">
+          <a href="#rituel" className="eyebrow group inline-flex items-center justify-center gap-3 py-3.5 text-forest">
             Le rituel
             <span className="h-px w-8 bg-gold transition-all duration-500 ease-soft group-hover:w-14" />
           </a>
         </div>
       </div>
 
-      {/* The range, shot as one family — full bleed, standing on the page */}
-      <div className="relative mt-9 h-[185px] w-full overflow-hidden sm:h-[250px] lg:mt-10 lg:h-[330px]">
-        <picture>
-          {/* A 4.3:1 crop cannot serve a phone band, so phones get their own framing */}
-          <source media="(max-width: 639px)" srcSet="/brand/hero-range-mobile.webp" />
-          <Image
-            src="/brand/hero-range.webp"
-            alt="Les quatre soins Desart Solis : Face Wash Miel & B5, Gommage Visage, Gel Douche Caramel et Sérum Cheveux & Barbe"
-            fill
-            sizes="100vw"
-            className="object-cover object-bottom"
-            loading="eager"
-            fetchPriority="high"
-          />
-        </picture>
-      </div>
+      <HeroRange />
     </section>
+  );
+}
+
+/* The four products standing on one line. Each is sized from the strip height
+   alone (cqh), so nothing can be cropped and the baseline holds at every
+   breakpoint. The halo behind them is fully contained inside the strip and
+   fades to zero alpha well before any edge, so it never leaves a seam. */
+function HeroRange() {
+  return (
+    <div className="relative mt-5 pb-6 lg:mt-6">
+      <div
+        className="hero-strip relative flex h-[200px] items-end justify-center gap-x-3.5 pb-2 sm:h-[220px] sm:gap-x-6 lg:h-[clamp(240px,19vw,300px)] lg:gap-x-[clamp(24px,2.6vw,44px)]"
+        role="img"
+        aria-label={`Les quatre soins Desart Solis : ${range.map((p) => p.name).join(", ")}.`}
+      >
+        <div className="hero-glow pointer-events-none absolute inset-0" aria-hidden />
+
+        {range.map((p, i) => (
+          <div
+            key={p.src}
+            className="relative shrink-0"
+            style={{ height: `${p.share * 100}%`, width: `${((p.share * p.w) / p.h) * 100}cqh` }}
+          >
+            {/* contact shadow so the product sits on the floor instead of floating */}
+            <span
+              className="product-shadow absolute bottom-0 left-1/2 h-[12%] w-[260%] -translate-x-1/2 translate-y-[45%]"
+              aria-hidden
+            />
+            <Image
+              src={p.src}
+              alt=""
+              fill
+              sizes="(min-width: 1024px) 108px, (min-width: 640px) 82px, 76px"
+              className="object-contain"
+              loading="eager"
+              fetchPriority={i === 0 ? "high" : "auto"}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

@@ -103,6 +103,43 @@
   background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
 }
 
+/* Moorish arch: a whisper, so its uprights dissolve before they reach the
+   floor instead of stopping in mid air. */
+@utility arch-fade {
+  -webkit-mask-image: linear-gradient(to bottom, #000 52%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 52%, transparent 100%);
+}
+
+/* Hero range strip — a size container, so each product can be sized from the
+   strip height alone (cqh). That is what keeps the four bottles standing on
+   one baseline at every viewport without baking them into a single raster. */
+@utility hero-strip {
+  container-type: size;
+}
+
+/* Warm light halo behind the range. The ellipse is sized so the gradient
+   reaches zero alpha on every edge of its box: the light dissolves into the
+   page instead of stopping at a line, so no seam can ever appear. */
+@utility hero-glow {
+  background: radial-gradient(
+    70% 50% at 50% 50%,
+    rgb(206 184 144 / 0.32) 0%,
+    rgb(206 184 144 / 0.18) 34%,
+    rgb(206 184 144 / 0.06) 64%,
+    rgb(206 184 144 / 0) 100%
+  );
+}
+
+/* Contact shadow under a product standing on the floor */
+@utility product-shadow {
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgb(74 56 40 / 0.32) 0%,
+    rgb(74 56 40 / 0.13) 44%,
+    rgb(74 56 40 / 0) 74%
+  );
+}
+
 /* Paper grain — adds a tactile, printed quality to large flat surfaces */
 @utility grain {
   position: relative;
