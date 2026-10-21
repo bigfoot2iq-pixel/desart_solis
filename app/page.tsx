@@ -110,28 +110,28 @@ function Header() {
 
 function Hero() {
   return (
-    <section id="hero" className="relative overflow-hidden px-4 pb-16 pt-14 sm:px-8 lg:pb-24 lg:pt-20">
+    <section id="hero" className="relative isolate overflow-hidden">
       {/* Moorish arch — the brand's core motif, kept as a whisper */}
       <div
-        className="pointer-events-none absolute left-1/2 top-0 hidden h-[30rem] w-[50rem] -translate-x-1/2 rounded-t-full border-x border-t border-forest/10 lg:block"
+        className="pointer-events-none absolute left-1/2 top-6 hidden h-[24rem] w-[46rem] -translate-x-1/2 rounded-t-full border-x border-t border-forest/10 lg:block"
         aria-hidden
       />
 
-      <div className="relative mx-auto max-w-3xl text-center">
+      <div className="relative mx-auto max-w-3xl px-4 pt-12 text-center sm:px-8 lg:pt-14">
         <p className="eyebrow text-gold-deep">Skin · Hair · Care</p>
 
-        <h1 className="display mt-6 text-[clamp(2.6rem,6.4vw,4.75rem)] text-forest">
+        <h1 className="display mt-5 text-[clamp(2.5rem,5.8vw,4rem)] text-forest">
           L’éclat du désert,
           <br />
           <em className="text-foil font-normal">dans chaque geste.</em>
         </h1>
 
-        <p className="mx-auto mt-6 max-w-lg text-[0.95rem] leading-relaxed text-ink/65">
+        <p className="mx-auto mt-5 max-w-xl text-[0.95rem] leading-relaxed text-ink/65">
           Quatre soins essentiels pour le visage, le corps, les cheveux et la barbe, formulés autour de l’huile d’argan
           du Maroc. Peu de produits, bien choisis.
         </p>
 
-        <div className="mt-9 flex flex-col items-center justify-center gap-2 sm:flex-row sm:gap-7">
+        <div className="mt-8 flex flex-col items-center justify-center gap-1 sm:flex-row sm:gap-7">
           <a
             href="#produits"
             className="eyebrow rounded-full bg-forest px-8 py-4 text-center text-cream transition-colors duration-300 hover:bg-forest-soft"
@@ -143,18 +143,23 @@ function Hero() {
             <span className="h-px w-8 bg-gold transition-all duration-500 ease-soft group-hover:w-14" />
           </a>
         </div>
+      </div>
 
-        {/* The range, shot as one family */}
-        <div className="relative mt-12 aspect-[16/10] overflow-hidden rounded-[1.75rem] bg-sand-warm">
+      {/* The range, shot as one family — full bleed, standing on the page */}
+      <div className="relative mt-9 h-[185px] w-full overflow-hidden sm:h-[250px] lg:mt-10 lg:h-[330px]">
+        <picture>
+          {/* A 4.3:1 crop cannot serve a phone band, so phones get their own framing */}
+          <source media="(max-width: 639px)" srcSet="/brand/hero-range-mobile.webp" />
           <Image
             src="/brand/hero-range.webp"
             alt="Les quatre soins Desart Solis : Face Wash Miel & B5, Gommage Visage, Gel Douche Caramel et Sérum Cheveux & Barbe"
             fill
-            sizes="(min-width: 768px) 48rem, 92vw"
-            className="object-cover"
-            preload
+            sizes="100vw"
+            className="object-cover object-bottom"
+            loading="eager"
+            fetchPriority="high"
           />
-        </div>
+        </picture>
       </div>
     </section>
   );
