@@ -51,7 +51,7 @@ function AnnouncementBar({ text }: { text: string | null }) {
   const parts = text.split("•").map((t) => t.trim()).filter(Boolean);
   return (
     <div className="bg-forest text-cream/80">
-      <p className="eyebrow mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-2 gap-y-1 px-4 py-2.5 text-center !text-[0.6rem] !tracking-[0.22em] sm:!text-[0.6875rem] sm:!tracking-[0.3em]">
+      <p className="eyebrow mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-2 gap-y-1 px-4 py-2.5 text-center !text-[0.6875rem] !tracking-[0.18em] sm:!tracking-[0.3em]">
         {parts.map((part, i) => (
           <span key={part} className="flex items-center gap-2">
             {i > 0 && <span className="text-gold">•</span>}
@@ -326,7 +326,7 @@ function ProductCard({ product }: { product: Product }) {
           <h3 className="font-serif text-[1.25rem] leading-tight text-forest sm:min-h-[2.5em] lg:text-[1.35rem]">
             {product.name}
           </h3>
-          <span className="shrink-0 text-[0.62rem] uppercase tracking-[0.16em] text-ink/65">
+          <span className="shrink-0 text-[0.6875rem] uppercase tracking-[0.16em] text-ink/65">
             {product.size}
             {category && <span className="hidden sm:inline"> · {category}</span>}
           </span>
@@ -636,7 +636,7 @@ function Footer({ settings }: { settings: Settings }) {
         <p>
           © <CopyrightYear /> Desart Solis. Tous droits réservés.
         </p>
-        <p className="eyebrow !text-[0.6rem]">Skin • Hair • Care</p>
+        <p className="eyebrow !text-[0.6875rem]">Skin • Hair • Care</p>
       </div>
     </footer>
   );

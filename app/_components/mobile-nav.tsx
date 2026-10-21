@@ -82,7 +82,7 @@ export function MobileNav({ items, ctaHref, ctaLabel }: { items: NavItem[]; ctaH
                   onClick={() => setOpen(false)}
                   className="group flex items-baseline gap-4 border-b border-forest/10 py-4 font-serif text-3xl font-light text-forest transition-colors hover:text-gold-deep"
                 >
-                  <span className="font-sans text-[0.6rem] tracking-[0.2em] text-forest/70">0{i + 1}</span>
+                  <span className="font-sans text-[0.6875rem] tracking-[0.2em] text-forest/70">0{i + 1}</span>
                   {item.label}
                 </a>
               </li>

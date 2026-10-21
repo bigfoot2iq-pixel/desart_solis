@@ -95,7 +95,10 @@ export function SnapRail({
       </Tag>
 
       {count > 1 && (
-        <div className="mt-6 flex items-center justify-center gap-2 lg:hidden">
+        /* The bar itself is 3px tall, far too thin to tap. The button keeps a
+           44px touch target and only the inner bar changes width, so the
+           indicator never shifts as the rail moves. */
+        <div className="mt-3 flex items-center justify-center gap-1 lg:hidden">
           {Array.from({ length: count }, (_, i) => (
             <button
               key={i}
@@ -103,10 +106,14 @@ export function SnapRail({
               onClick={() => goTo(i)}
               aria-label={`Aller à l’${itemLabel} ${i + 1}`}
               aria-current={i === index}
-              className={`h-[3px] rounded-full transition-all duration-500 ease-soft ${
-                i === index ? "w-8 bg-gold-deep" : "w-4 bg-forest/15"
-              }`}
-            />
+              className="flex h-11 w-8 items-center justify-center"
+            >
+              <span
+                className={`h-[3px] rounded-full transition-all duration-500 ease-soft ${
+                  i === index ? "w-8 bg-gold-deep" : "w-4 bg-forest/15"
+                }`}
+              />
+            </button>
           ))}
         </div>
       )}

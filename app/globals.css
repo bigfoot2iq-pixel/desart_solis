@@ -23,6 +23,10 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    /* Two bars live at the bottom of the screen on a phone (the site-wide cart
+       bar and the order action bar). An anchor scrolled to must not land
+       underneath them. */
+    scroll-padding-bottom: 5.5rem;
   }
 
   body {

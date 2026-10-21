@@ -8,8 +8,13 @@ import type { Product, Review, ReviewMedia } from "../_lib/types";
 const PAGE_SIZE = 6;
 const VOTES_KEY = "desart-review-votes-v2";
 const MAX_FILES = 4;
+/** How many customer photos & videos the teaser strip shows at most. */
+const MAX_MEDIA_STRIP = 12;
 /** Hosting platforms cap request bodies around 4.5 MB */
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+/** The formats the review endpoint accepts — the picker and the check must agree. */
+const ACCEPTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const ACCEPTED_VIDEO_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
 
 type Sort = "recent" | "highest" | "lowest" | "media" | "helpful";
 const sortLabels: Record<Sort, string> = {
@@ -40,6 +45,33 @@ function initials(name: string) {
 /** Flattened list of every media item, so the lightbox can step across reviews */
 type MediaRef = { review: Review; media: ReviewMedia; index: number };
 
+/**
+ * The height of the viewport that is actually visible.
+ *
+ * `dvh` does not shrink for the on-screen keyboard on iOS, so a dialog sized
+ * with it keeps its full height while the keyboard covers the bottom half —
+ * which is where the submit button lives. The visual viewport does report the
+ * real height, so the dialog is sized against that instead.
+ */
+function useVisibleHeight() {
+  const [height, setHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const sync = () => setHeight(vv.height);
+    sync();
+    vv.addEventListener("resize", sync);
+    vv.addEventListener("scroll", sync);
+    return () => {
+      vv.removeEventListener("resize", sync);
+      vv.removeEventListener("scroll", sync);
+    };
+  }, []);
+
+  return height;
+}
+
 export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: Review[]; products: Product[]; whatsappNumber: string }) {
   const [ratingFilter, setRatingFilter] = useState<number | null>(null);
   const [productFilter, setProductFilter] = useState<string | null>(null);
@@ -48,6 +80,9 @@ export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: 
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [writeOpen, setWriteOpen] = useState(false);
   const [votes, setVotes] = useState<Record<string, Vote>>({});
+  /** The votes are also read outside React: a vote callback can still be
+      running when the next one starts, and it must not work on a stale copy. */
+  const votesRef = useRef<Record<string, Vote>>({});
 
   const productBySlug = useMemo(() => new Map(products.map((p) => [p.slug, p])), [products]);
   const reviewedProducts = useMemo(() => products.filter((p) => reviews.some((r) => r.product === p.slug)), [products, reviews]);
@@ -55,34 +90,79 @@ export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: 
   useEffect(() => {
     try {
       const saved = localStorage.getItem(VOTES_KEY);
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- restoring persisted votes after hydration
-      if (saved) setVotes(JSON.parse(saved));
+      if (saved) {
+        const parsed = JSON.parse(saved) as unknown;
+        // The stored value can be stale or hand-edited: keep only what still
+        // looks like a vote, so one bad entry cannot poison the rest.
+        const clean: Record<string, Vote> = {};
+        if (parsed && typeof parsed === "object") {
+          for (const [id, value] of Object.entries(parsed as Record<string, unknown>)) {
+            if (!value || typeof value !== "object") continue;
+            const v = value as Partial<Vote>;
+            if (typeof v.base !== "number") continue;
+            clean[id] = {
+              dir: v.dir === "up" || v.dir === "down" ? v.dir : null,
+              base: v.base,
+              sent: v.sent === true,
+            };
+          }
+        }
+        votesRef.current = clean;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- restoring persisted votes after hydration
+        setVotes(clean);
+      }
     } catch {}
   }, []);
 
-  const vote = useCallback(
-    (review: Review, dir: "up" | "down") => {
-      const current = votes[review.id];
-      if (dir === "up" && current?.dir === "up") return; // a counted vote can't be withdrawn
-      const sent = current?.sent ?? false;
-      const next = { ...votes, [review.id]: { dir: current?.dir === dir ? null : dir, base: current?.base ?? review.helpful, sent } };
-      // Only "helpful" is counted server-side, at most once per browser
-      if (dir === "up" && !sent) {
-        next[review.id].sent = true;
-        next[review.id].base = review.helpful;
-        fetch("/api/reviews/helpful", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ id: review.id }),
-        }).catch(() => {});
-      }
-      setVotes(next);
-      try {
-        localStorage.setItem(VOTES_KEY, JSON.stringify(next));
-      } catch {}
-    },
-    [votes],
-  );
+  const persistVotes = (next: Record<string, Vote>) => {
+    try {
+      localStorage.setItem(VOTES_KEY, JSON.stringify(next));
+    } catch {}
+  };
+
+  const vote = useCallback((review: Review, dir: "up" | "down") => {
+    const current = votesRef.current[review.id];
+    const nextDir = current?.dir === dir ? null : dir;
+    /* "Utile" is the only vote the server counts, and only once per browser.
+       It is counted optimistically and taken back if the server refuses it, so
+       the number on the card is never a lie the visitor cannot undo. */
+    const shouldCount = dir === "up" && nextDir === "up" && !current?.sent;
+
+    const next: Record<string, Vote> = {
+      ...votesRef.current,
+      [review.id]: {
+        dir: nextDir,
+        base: current?.base ?? review.helpful,
+        sent: shouldCount ? true : (current?.sent ?? false),
+      },
+    };
+    votesRef.current = next;
+    setVotes(next);
+    persistVotes(next);
+
+    if (!shouldCount) return;
+
+    fetch("/api/reviews/helpful", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: review.id }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`helpful ${res.status}`);
+      })
+      .catch(() => {
+        // The vote never landed: take it back so the count tells the truth.
+        const currentVotes = votesRef.current;
+        if (!currentVotes[review.id]?.sent) return;
+        const rolled: Record<string, Vote> = {
+          ...currentVotes,
+          [review.id]: { dir: null, base: review.helpful, sent: false },
+        };
+        votesRef.current = rolled;
+        setVotes(rolled);
+        persistVotes(rolled);
+      });
+  }, []);
 
   const stats = useMemo(() => {
     const total = reviews.length;
@@ -181,14 +261,17 @@ export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: 
             })}
           </ul>
         ) : (
-          // No reviews yet — show the range that is waiting to be rated
-          <ul className="flex items-end justify-center gap-3 sm:justify-start sm:gap-5">
+          // No reviews yet — show the range that is waiting to be rated.
+          // A scroll rail, not a row: four products at 64px plus the gaps are
+          // wider than a 320px screen, and the overflow would push the whole
+          // page sideways.
+          <ul className="-mx-2 flex min-w-0 items-end gap-3 overflow-x-auto px-2 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:justify-start sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0">
             {products.map((p) => (
-              <li key={p.slug} className="flex w-16 flex-col items-center gap-3 sm:w-20">
+              <li key={p.slug} className="flex w-16 shrink-0 flex-col items-center gap-3 sm:w-20">
                 <span className="flex h-24 w-full items-end justify-center rounded-xl bg-cream/5">
                   <Image src={p.image.url} alt="" width={p.image.width} height={p.image.height} sizes="64px" className="h-20 w-auto" />
                 </span>
-                <span className="text-center text-[0.6rem] leading-tight text-cream/60">{p.name}</span>
+                <span className="text-center text-[0.6875rem] leading-tight text-cream/60">{p.name}</span>
               </li>
             ))}
           </ul>
@@ -210,8 +293,11 @@ export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: 
       {allMedia.length > 0 && (
         <div className="mt-10">
           <p className="eyebrow text-forest/70">Photos & vidéos clients</p>
+          {/* Capped: the strip is a teaser. Rendering every media item of every
+              review would put hundreds of thumbnails and videos in the page at
+              once, on a phone, over mobile data. */}
           <div className="-mx-4 mt-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:thin] sm:mx-0 sm:px-0">
-            {allMedia.map((m, i) => (
+            {allMedia.slice(0, MAX_MEDIA_STRIP).map((m, i) => (
               <button
                 key={`${m.review.id}-${m.media.key}`}
                 type="button"
@@ -223,6 +309,11 @@ export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: 
               </button>
             ))}
           </div>
+          {allMedia.length > MAX_MEDIA_STRIP && (
+            <p className="mt-2 text-xs text-ink/65">
+              {allMedia.length} médias au total — tous sont consultables depuis chaque avis.
+            </p>
+          )}
         </div>
       )}
 
@@ -257,8 +348,11 @@ export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: 
               Trier
               <select
                 value={sort}
-                onChange={(e) => setSort(e.target.value as Sort)}
-                className="rounded-full border border-forest/15 bg-cream px-4 py-2 text-xs text-forest outline-none focus:border-forest"
+                onChange={(e) => {
+                  setSort(e.target.value as Sort);
+                  resetPaging();
+                }}
+                className="rounded-full border border-forest/15 bg-cream px-4 py-2 text-sm text-forest outline-none focus:border-forest sm:text-xs"
               >
                 {Object.entries(sortLabels).map(([k, v]) => (
                   <option key={k} value={k}>
@@ -270,7 +364,7 @@ export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: 
           </div>
 
           <div className="mt-4 flex min-h-6 items-center gap-3 text-xs text-ink/65">
-            <span>
+            <span aria-live="polite">
               {filtered.length} avis{ratingFilter ? ` · ${ratingFilter} étoile${ratingFilter > 1 ? "s" : ""}` : ""}
             </span>
             {(ratingFilter || productFilter) && (
@@ -281,7 +375,7 @@ export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: 
                   setProductFilter(null);
                   resetPaging();
                 }}
-                className="text-forest underline underline-offset-4"
+                className="-my-2 px-2 py-2 text-forest underline underline-offset-4"
               >
                 Effacer les filtres
               </button>
@@ -339,7 +433,7 @@ function ReviewCard({
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <p className="text-sm font-medium text-forest">{r.author}</p>
             {r.verified && (
-              <span className="inline-flex items-center gap-1 rounded-sm bg-forest px-1.5 py-0.5 text-[0.6rem] font-medium uppercase tracking-wider text-cream">
+              <span className="inline-flex items-center gap-1 rounded-sm bg-forest px-1.5 py-0.5 text-[0.6875rem] font-medium uppercase tracking-wider text-cream">
                 <VerifiedIcon className="size-2.5" />
                 Acheteur vérifié
               </span>
@@ -386,10 +480,10 @@ function ReviewCard({
         </div>
       )}
 
-      <footer className="mt-5 flex items-center justify-between border-t border-forest/10 pt-4 text-xs text-ink/65">
+      <footer className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-forest/10 pt-4 text-xs text-ink/65">
         <span>Cet avis vous a-t-il été utile ?</span>
         <div className="flex gap-1">
-          <VoteButton active={vote?.dir === "up"} onClick={() => onVote(r, "up")} label="Utile">
+          <VoteButton active={vote?.dir === "up"} onClick={() => onVote(r, "up")} label={`Utile — ${helpful} vote${helpful > 1 ? "s" : ""}`}>
             <Thumb className="size-3.5" />
             {helpful}
           </VoteButton>
@@ -433,6 +527,7 @@ function Lightbox({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const open = index !== null;
+  const visibleHeight = useVisibleHeight();
 
   useEffect(() => {
     const d = ref.current;
@@ -443,7 +538,7 @@ function Lightbox({
 
   const step = useCallback(
     (dir: 1 | -1) => {
-      if (index === null) return;
+      if (index === null || items.length === 0) return;
       onChange((index + dir + items.length) % items.length);
     },
     [index, items.length, onChange],
@@ -459,20 +554,26 @@ function Lightbox({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, step]);
 
-  const current = index !== null ? items[index] : null;
+  /* The list can shrink while the lightbox is open — a review is unpublished
+     and the live query re-runs. An index past the end would open an empty
+     modal. */
+  const safeIndex = index !== null && index < items.length ? index : null;
+  const current = safeIndex !== null ? items[safeIndex] : null;
 
   return (
     <dialog
       ref={ref}
       onClose={() => onChange(null)}
       onClick={(e) => e.target === e.currentTarget && onChange(null)}
-      className="m-auto max-h-[92vh] w-[min(64rem,calc(100vw-2rem))] overflow-hidden rounded-2xl bg-cream p-0 backdrop:bg-forest/80 backdrop:backdrop-blur-sm"
+      aria-label="Aperçu du média"
+      style={visibleHeight ? { maxHeight: `${visibleHeight - 32}px` } : undefined}
+      className="m-auto max-h-[92dvh] w-[min(64rem,calc(100dvw-2rem))] overflow-hidden rounded-2xl bg-cream p-0 backdrop:bg-forest/80 backdrop:backdrop-blur-sm"
     >
       {current && (
-        <div className="grid max-h-[92vh] md:grid-cols-[1.4fr_1fr]">
+        <div className="grid max-h-[92dvh] md:grid-cols-[1.4fr_1fr]">
           <div className="relative flex min-h-64 items-center justify-center bg-ink">
             {current.media.type === "video" ? (
-              <video key={current.media.url} src={current.media.url} controls autoPlay playsInline className="max-h-[60vh] w-full object-contain md:max-h-[92vh]" />
+              <video key={current.media.url} src={current.media.url} controls autoPlay playsInline className="max-h-[60dvh] w-full object-contain md:max-h-[92dvh]" />
             ) : (
               <Image
                 key={current.media.url}
@@ -481,7 +582,7 @@ function Lightbox({
                 width={current.media.width}
                 height={current.media.height}
                 sizes="(min-width: 768px) 38rem, 100vw"
-                className="max-h-[60vh] w-full object-contain md:max-h-[92vh]"
+                className="max-h-[60dvh] w-full object-contain md:max-h-[92dvh]"
               />
             )}
             {items.length > 1 && (
@@ -490,8 +591,8 @@ function Lightbox({
                 <NavButton side="right" onClick={() => step(1)} />
               </>
             )}
-            <span className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-ink/60 px-3 py-1 text-xs text-cream">
-              {(index ?? 0) + 1} / {items.length}
+            <span className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-ink/60 px-3 py-1 text-xs text-cream" aria-live="polite">
+              {(safeIndex ?? 0) + 1} / {items.length}
             </span>
           </div>
           <div className="overflow-y-auto p-6 sm:p-8">
@@ -533,13 +634,26 @@ async function compressImage(file: File): Promise<File> {
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(bitmap.width * scale);
     canvas.height = Math.round(bitmap.height * scale);
-    canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const ctx = canvas.getContext("2d")!;
+    /* JPEG has no alpha channel. Without a fill, a transparent PNG is flattened
+       onto black — a customer with a cut-out photo would upload a black
+       rectangle. */
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
     const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/jpeg", 0.82));
     if (!blob) return file;
     return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
   } catch {
     return file;
   }
+}
+
+/** A unique id for an attachment. `crypto.randomUUID` needs a secure context,
+    which a phone on a plain-HTTP preview would not have. */
+function attachmentId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  return `att-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function WriteReviewDialog({ open, onClose, products, whatsappNumber }: { open: boolean; onClose: () => void; products: Product[]; whatsappNumber: string }) {
@@ -552,6 +666,27 @@ function WriteReviewDialog({ open, onClose, products, whatsappNumber }: { open: 
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
 
+  /** The attachments are also read across `await` boundaries, where the
+      React state is already stale. The ref is the source of truth. */
+  const filesRef = useRef<Attachment[]>([]);
+  const addingRef = useRef(false);
+  const sendingRef = useRef(false);
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const visibleHeight = useVisibleHeight();
+
+  /* The form is long on a phone and the error sits at the very bottom of it.
+     Without this the visitor taps "Publier" and sees nothing happen. */
+  useEffect(() => {
+    if (!error) return;
+    errorRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [error]);
+
+  const updateFiles = (next: Attachment[]) => {
+    filesRef.current = next;
+    setFiles(next);
+  };
+
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
@@ -559,95 +694,161 @@ function WriteReviewDialog({ open, onClose, products, whatsappNumber }: { open: 
     if (!open && d.open) d.close();
   }, [open]);
 
+  /* Blob URLs outlive the component unless they are released. */
+  useEffect(
+    () => () => {
+      filesRef.current.forEach((f) => URL.revokeObjectURL(f.url));
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+    },
+    [],
+  );
+
   const totalBytes = files.reduce((s, f) => s + f.file.size, 0);
 
   async function onFiles(list: FileList | null) {
-    if (!list) return;
+    if (!list || addingRef.current) return;
+    addingRef.current = true;
     setError(null);
-    const incoming = Array.from(list).slice(0, MAX_FILES - files.length);
-    const next: Attachment[] = [];
-    for (const raw of incoming) {
-      const kind = raw.type.startsWith("video/") ? "video" : raw.type.startsWith("image/") ? "image" : null;
-      if (!kind) continue;
-      const file = kind === "image" ? await compressImage(raw) : raw;
-      next.push({ id: `${raw.name}-${raw.size}-${raw.lastModified}`, file, url: URL.createObjectURL(file), kind });
+    try {
+      const prepared: Attachment[] = [];
+      let rejected = false;
+      for (const raw of Array.from(list)) {
+        const kind = ACCEPTED_IMAGE_TYPES.has(raw.type) ? "image" : ACCEPTED_VIDEO_TYPES.has(raw.type) ? "video" : null;
+        /* The endpoint only accepts these formats. A HEIC straight from an
+           iPhone camera would be uploaded in full and then refused, so the
+           file is checked here first. */
+        if (!kind) {
+          rejected = true;
+          continue;
+        }
+        const file = kind === "image" ? await compressImage(raw) : raw;
+        prepared.push({ id: attachmentId(), file, url: URL.createObjectURL(file), kind });
+      }
+
+      if (prepared.length === 0) {
+        setError(rejected ? "Format non accepté (JPG, PNG, WebP, MP4 ou MOV)." : "Aucun fichier sélectionné.");
+        return;
+      }
+
+      /* Read the list only now: the compression above yields, and another
+         batch may have landed in the meantime. */
+      const current = filesRef.current;
+      const room = MAX_FILES - current.length;
+      const accepted = prepared.slice(0, Math.max(room, 0));
+      prepared.slice(accepted.length).forEach((f) => URL.revokeObjectURL(f.url));
+
+      const all = [...current, ...accepted];
+      const bytes = all.reduce((s, f) => s + f.file.size, 0);
+      if (bytes > MAX_UPLOAD_BYTES) {
+        all.forEach((f) => URL.revokeObjectURL(f.url));
+        updateFiles([]);
+        setError("Fichiers trop lourds (4 Mo max au total). Pour une vidéo plus longue, envoyez-la-nous sur WhatsApp.");
+        return;
+      }
+
+      updateFiles(all);
+      if (rejected) setError("Format non accepté (JPG, PNG, WebP, MP4 ou MOV). Les autres fichiers ont été ajoutés.");
+    } finally {
+      addingRef.current = false;
     }
-    const all = [...files, ...next];
-    if (all.reduce((s, f) => s + f.file.size, 0) > MAX_UPLOAD_BYTES) {
-      next.forEach((f) => URL.revokeObjectURL(f.url));
-      setError("Fichiers trop lourds (4 Mo max au total). Pour une vidéo plus longue, envoyez-la-nous sur WhatsApp.");
-      return;
-    }
-    setFiles(all);
   }
 
   function removeFile(id: string) {
-    setFiles((prev) => {
-      prev.filter((f) => f.id === id).forEach((f) => URL.revokeObjectURL(f.url));
-      return prev.filter((f) => f.id !== id);
-    });
+    const next = filesRef.current.filter((f) => f.id !== id);
+    filesRef.current.filter((f) => f.id === id).forEach((f) => URL.revokeObjectURL(f.url));
+    updateFiles(next);
   }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    /* A second Enter or a double tap must not send the review twice. */
+    if (sendingRef.current) return;
     if (!rating) return setError("Choisissez une note.");
     if (form.author.trim().length < 2) return setError("Indiquez votre nom.");
     if (form.body.trim().length < 10) return setError("Votre avis doit contenir au moins 10 caractères.");
     setError(null);
     setStatus("sending");
+    sendingRef.current = true;
 
     const data = new FormData();
     data.set("rating", String(rating));
     Object.entries(form).forEach(([k, v]) => data.set(k, v.trim()));
-    files.forEach((f) => data.append("media", f.file));
+    filesRef.current.forEach((f) => data.append("media", f.file));
+
+    /* On a slow mobile connection an upload can hang for minutes with no
+       answer. The abort gives the visitor a way out instead of a dead button. */
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 45000);
 
     try {
-      const res = await fetch("/api/reviews", { method: "POST", body: data });
+      const res = await fetch("/api/reviews", { method: "POST", body: data, signal: controller.signal });
       const json = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) throw new Error(json.error || "Envoi impossible, réessayez dans un instant.");
       setStatus("done");
     } catch (err) {
       setStatus("idle");
-      setError((err as Error).message);
+      setError(
+        err instanceof DOMException && err.name === "AbortError"
+          ? "L’envoi a pris trop de temps. Vérifiez votre connexion et réessayez."
+          : (err as Error).message,
+      );
+    } finally {
+      clearTimeout(timeout);
+      sendingRef.current = false;
     }
   }
 
   function close() {
     onClose();
-    setTimeout(() => {
+    /* The reset is deferred so the dialog can close first. The timer is
+       cleared first: reopening within those 300ms must not wipe the new
+       attempt's files and text. */
+    if (resetTimer.current) clearTimeout(resetTimer.current);
+    resetTimer.current = setTimeout(() => {
+      resetTimer.current = null;
       setStatus("idle");
       setRating(0);
       setError(null);
-      files.forEach((f) => URL.revokeObjectURL(f.url));
-      setFiles([]);
+      filesRef.current.forEach((f) => URL.revokeObjectURL(f.url));
+      updateFiles([]);
       setForm(emptyForm);
     }, 300);
   }
 
   const labels = ["", "Décevant", "Moyen", "Bien", "Très bien", "Excellent"];
   const shown = hover || rating;
-  const field = "w-full rounded-xl border border-forest/15 bg-cream-soft px-4 py-3 text-sm outline-none transition-colors focus:border-forest";
+  /* 16px on a phone: anything smaller makes iOS zoom the page on focus. */
+  const field = "w-full rounded-xl border border-forest/15 bg-cream-soft px-4 py-3 text-base outline-none transition-colors focus:border-forest sm:text-sm";
+  const titleId = useId();
+  const ratingLabelId = useId();
 
   return (
     <dialog
       ref={ref}
       onClose={close}
       onClick={(e) => e.target === e.currentTarget && close()}
-      className="m-auto max-h-[92vh] w-[min(36rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl bg-cream p-0 backdrop:bg-forest/80 backdrop:backdrop-blur-sm"
+      aria-labelledby={titleId}
+      /* `dvh` follows the dynamic viewport, and `useVisibleHeight` follows the
+         visual viewport: on a phone with the keyboard up, the dialog shrinks
+         instead of keeping its submit button behind the keyboard. */
+      style={visibleHeight ? { maxHeight: `${visibleHeight - 32}px` } : undefined}
+      className="m-auto max-h-[92dvh] w-[min(36rem,calc(100dvw-2rem))] overflow-y-auto rounded-2xl bg-cream p-0 backdrop:bg-forest/80 backdrop:backdrop-blur-sm"
     >
-      <div className="p-7 sm:p-9">
+      <div className="p-5 sm:p-9">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="eyebrow text-gold-deep">Votre avis</p>
-            <p className="mt-2 font-serif text-3xl text-forest">Écrire un avis</p>
+            <p id={titleId} className="mt-2 font-serif text-3xl text-forest">
+              Écrire un avis
+            </p>
           </div>
-          <button type="button" onClick={close} aria-label="Fermer" className="flex size-9 items-center justify-center rounded-full text-forest hover:bg-sand">
+          <button type="button" onClick={close} aria-label="Fermer" className="flex size-11 items-center justify-center rounded-full text-forest hover:bg-sand">
             <CloseIcon className="size-4" />
           </button>
         </div>
 
         {status === "done" ? (
-          <div className="py-10 text-center">
+          <div className="py-10 text-center" role="status">
             <Stars rating={rating} size="size-6" className="justify-center" />
             <p className="mt-5 font-serif text-2xl text-forest">Merci pour votre avis !</p>
             <p className="mx-auto mt-3 max-w-sm text-sm text-ink/65">Il sera publié sur le site après vérification par notre équipe.</p>
@@ -658,24 +859,40 @@ function WriteReviewDialog({ open, onClose, products, whatsappNumber }: { open: 
         ) : (
           <form onSubmit={submit} className="mt-7 space-y-5">
             <div>
-              <p className="mb-2 text-xs font-medium text-forest/80">Note</p>
-              <div className="flex items-center gap-3">
-                <div className="flex" onMouseLeave={() => setHover(0)}>
+              <p id={ratingLabelId} className="mb-2 text-xs font-medium text-forest/80">
+                Note
+              </p>
+              {/* A radio group, not five toggles: the stars are one answer to
+                  one question, and a screen reader should say so. */}
+              <div
+                role="radiogroup"
+                aria-labelledby={ratingLabelId}
+                className="flex flex-wrap items-center gap-3"
+                onMouseLeave={() => setHover(0)}
+                onBlur={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) setHover(0);
+                }}
+              >
+                <div className="flex">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <button
                       key={n}
                       type="button"
+                      role="radio"
+                      aria-checked={rating === n}
                       onClick={() => setRating(n)}
                       onMouseEnter={() => setHover(n)}
-                      aria-label={`${n} étoile${n > 1 ? "s" : ""}`}
-                      aria-pressed={rating === n}
-                      className="p-0.5"
+                      onFocus={() => setHover(n)}
+                      aria-label={`${n} étoile${n > 1 ? "s" : ""} — ${labels[n]}`}
+                      className="p-1"
                     >
                       <StarIcon fill={n <= shown ? 1 : 0} className="size-8" />
                     </button>
                   ))}
                 </div>
-                <span className="text-sm text-ink/65">{labels[shown]}</span>
+                <span className="text-sm text-ink/65" aria-live="polite">
+                  {labels[shown]}
+                </span>
               </div>
             </div>
 
@@ -743,17 +960,20 @@ function WriteReviewDialog({ open, onClose, products, whatsappNumber }: { open: 
                     <button
                       type="button"
                       onClick={() => removeFile(f.id)}
-                      aria-label="Retirer"
-                      className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-cream/90 text-forest"
+                      aria-label={`Retirer ${f.file.name}`}
+                      className="absolute right-0.5 top-0.5 flex size-8 items-center justify-center rounded-full bg-cream/90 text-forest"
                     >
-                      <CloseIcon className="size-3" />
+                      <CloseIcon className="size-3.5" />
                     </button>
                   </div>
                 ))}
                 {files.length < MAX_FILES && (
-                  <label className="flex size-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-forest/25 text-forest/70 transition-colors hover:border-forest hover:text-forest">
+                  /* `peer` carries the focus ring from the hidden file input to
+                     the label: the input is clipped to 1px, so a keyboard user
+                     would otherwise land on an invisible control. */
+                  <label className="peer flex size-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-forest/25 text-forest/70 transition-colors hover:border-forest hover:text-forest peer-focus-visible:border-forest peer-focus-visible:ring-2 peer-focus-visible:ring-forest/40">
                     <CameraIcon className="size-5" />
-                    <span className="text-[0.6rem]">Ajouter</span>
+                    <span className="text-[0.65rem]">Ajouter</span>
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
@@ -767,7 +987,7 @@ function WriteReviewDialog({ open, onClose, products, whatsappNumber }: { open: 
                   </label>
                 )}
               </div>
-              <p className="mt-2 text-[0.7rem] text-ink/65">
+              <p className="mt-2 text-xs text-ink/65">
                 Vidéo trop lourde ?{" "}
                 <a href={whatsappLink(whatsappNumber, "Bonjour Desart Solis, voici une vidéo pour mon avis :")} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
                   Envoyez-la sur WhatsApp
@@ -777,7 +997,11 @@ function WriteReviewDialog({ open, onClose, products, whatsappNumber }: { open: 
             </div>
 
             {error && (
-              <p role="alert" className="text-xs text-[#b4533a]">
+              <p
+                ref={errorRef}
+                role="alert"
+                className="text-xs text-[#b4533a]"
+              >
                 {error}
               </p>
             )}
@@ -821,7 +1045,8 @@ function VoteButton({ active, onClick, label, children }: { active: boolean; onC
       onClick={onClick}
       aria-pressed={active}
       aria-label={label}
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 nums transition-colors ${active ? "bg-forest text-cream" : "hover:bg-sand"}`}
+      /* 44px tall: this is one of the most-tapped controls in the section. */
+      className={`inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 nums transition-colors ${active ? "bg-forest text-cream" : "hover:bg-sand"}`}
     >
       {children}
     </button>

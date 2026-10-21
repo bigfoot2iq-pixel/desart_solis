@@ -303,10 +303,13 @@ export function OrderBuilder() {
   return (
     <>
       {/* Step rail — mobile only. Sticks under the header so the visitor always
-          knows where they are and can jump back to a completed step. */}
+          knows where they are and can jump back to a completed step.
+          `sm:top-20` matches the header, which grows from h-16 to h-20 at the
+          same breakpoint: sticking at 64px on a tablet would hide the top of
+          the rail behind the header. */}
       <div
         ref={railRef}
-        className="sticky top-16 z-30 -mx-4 mb-6 mt-4 scroll-mt-20 border-y border-forest/10 bg-cream-soft/95 px-4 py-1.5 backdrop-blur-md sm:-mx-8 sm:px-8 lg:hidden"
+        className="sticky top-16 z-30 -mx-4 mb-6 mt-4 scroll-mt-20 border-y border-forest/10 bg-cream-soft/95 px-4 py-1.5 backdrop-blur-md sm:top-20 sm:-mx-8 sm:px-8 lg:hidden"
       >
         <ol className="flex items-center gap-2">
           {STEPS.map((s, i) => {
@@ -381,14 +384,14 @@ export function OrderBuilder() {
                         }`}
                       >
                         {pack.badge && (
-                          <span className="bg-foil eyebrow absolute -top-2 right-2.5 rounded-full px-2 py-0.5 !text-[0.5rem] tracking-[0.18em] text-forest sm:-top-2.5 sm:right-5 sm:px-3 sm:py-1 sm:!text-[0.55rem] sm:tracking-[0.3em]">
+                          <span className="bg-foil eyebrow absolute -top-2 right-2.5 rounded-full px-2 py-0.5 !text-[0.625rem] tracking-[0.14em] text-forest sm:-top-2.5 sm:right-5 sm:px-3 sm:py-1 sm:!text-[0.6875rem] sm:tracking-[0.3em]">
                             {pack.badge}
                           </span>
                         )}
                         <div className="flex items-start justify-between gap-1.5 sm:gap-3">
                           <div className="min-w-0">
                             <p
-                              className={`eyebrow !text-[0.56rem] !tracking-[0.14em] sm:!text-[0.6875rem] sm:!tracking-[0.3em] ${
+                              className={`eyebrow !text-[0.625rem] !tracking-[0.14em] sm:!text-[0.6875rem] sm:!tracking-[0.3em] ${
                                 active ? "text-gold" : "text-gold-deep"
                               }`}
                             >
@@ -396,7 +399,7 @@ export function OrderBuilder() {
                             </p>
                             <p className="mt-1 font-serif text-[1.15rem] leading-tight sm:mt-2 sm:text-2xl">{pack.name}</p>
                             <p
-                              className={`mt-1 line-clamp-2 text-[0.62rem] leading-snug sm:mt-1 sm:line-clamp-none sm:text-xs ${
+                              className={`mt-1 line-clamp-2 text-[0.6875rem] leading-snug sm:mt-1 sm:line-clamp-none sm:text-xs ${
                                 active ? "text-cream/60" : "text-ink/65"
                               }`}
                             >
@@ -599,10 +602,10 @@ export function OrderBuilder() {
           section is on screen, so there is never more than one bar and one
           amount on a phone. */}
       {sectionActive && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-forest/10 bg-cream/95 px-4 py-2.5 backdrop-blur-md lg:hidden">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-forest/10 bg-cream/95 px-4 pt-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))] backdrop-blur-md lg:hidden">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-[0.58rem] uppercase leading-tight tracking-[0.14em] text-ink/65">
+              <p className="truncate text-[0.625rem] uppercase leading-tight tracking-[0.14em] text-ink/65">
                 {deliveryFee === null ? "Sous-total" : "Total"} · {count} article{count > 1 ? "s" : ""}
               </p>
               <p className="font-serif text-[1.5rem] leading-tight nums text-forest">

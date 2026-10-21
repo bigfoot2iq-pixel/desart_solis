@@ -212,8 +212,11 @@ export function OrderBar() {
         </button>
       </div>
 
+      {/* `env(safe-area-inset-bottom)` keeps the bar clear of the home
+          indicator on a notched iPhone — `viewport-fit=cover` in the layout is
+          what makes that inset non-zero. */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 border-t border-forest/10 bg-cream/95 px-4 py-3 backdrop-blur-md transition-transform duration-500 ease-soft lg:hidden ${
+        className={`fixed inset-x-0 bottom-0 z-50 border-t border-forest/10 bg-cream/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-md transition-transform duration-500 ease-soft lg:hidden ${
           count > 0 && !inOrderSection ? "translate-y-0" : "translate-y-full"
         }`}
       >
