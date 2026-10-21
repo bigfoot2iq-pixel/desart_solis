@@ -9,10 +9,8 @@
   --color-sand-warm: #efe9de;
   --color-forest: #233129;
   --color-forest-soft: #2e3f35;
-  --color-forest-deep: #1a251e;
   --color-gold: #ceaf6f;
   --color-gold-deep: #876829;
-  --color-gold-soft: #e5cd9a;
   --color-ink: #1c2420;
 
   --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
@@ -98,11 +96,6 @@
   text-transform: uppercase;
   font-weight: 500;
   line-height: 1.4;
-}
-
-/* Moroccan arch: a soft dome on top, flat on the bottom */
-@utility arch {
-  border-radius: 9999px 9999px 0 0;
 }
 
 /* Hairline rule that fades out at both ends */

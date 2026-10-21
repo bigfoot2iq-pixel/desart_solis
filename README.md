@@ -76,8 +76,8 @@ background is required. Editorial photography (used in the story section) lives 
 Tokens live in `app/globals.css`:
 
 - **Colours** — `cream`, `sand`, `forest`, `gold`, `ink` (see `public/brand/branding-board.webp`)
-- **Utilities** — `display` (large serif), `eyebrow` (tracked small caps), `arch` (Moroccan dome),
-  `grain` (paper texture), `text-foil` / `text-foil-bright` (metallic gold on light / dark surfaces),
+- **Utilities** — `display` (large serif), `eyebrow` (tracked small caps), `grain` (paper texture),
+  `rule-gold` (fading hairline), `text-foil` / `text-foil-bright` (metallic gold on light / dark surfaces),
   `nums` (lining + tabular figures)
 - **Motion** — scroll reveals use CSS `animation-timeline: view()` and are disabled under
   `prefers-reduced-motion`
