@@ -6,6 +6,7 @@ export default defineCliConfig({
     dataset: 'production',
   },
   deployment: {
+    appId: 'xmeyfx7yupt5tbdobzug8brb',
     autoUpdates: true,
   },
   studioHost: 'desart-solis',

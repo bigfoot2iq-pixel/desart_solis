@@ -12,10 +12,14 @@
     "typegen": "pnpm --filter desart-solis-studio run typegen"
   },
   "dependencies": {
+    "@sanity/icons": "^5.2.3",
+    "@sanity/vision": "^6.19.0",
     "next": "16.4.2",
     "next-sanity": "13.3.4",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "sanity": "^6.19.0",
+    "styled-components": "^6.1.19"
   },
   "devDependencies": {
     "@sanity/client": "8.9.0",

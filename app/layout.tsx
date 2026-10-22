@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Montserrat } from "next/font/google";
-import { SanityLive } from "@/sanity/live";
 import "./globals.css";
 
 const serif = Cormorant_Garamond({
@@ -75,10 +74,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="fr" className={`${serif.variable} ${sans.variable} scroll-smooth antialiased`}>
-      <body className="min-h-full">
-        {children}
-        <SanityLive includeDrafts={false} />
-      </body>
+      <body className="min-h-full">{children}</body>
     </html>
   );
 }

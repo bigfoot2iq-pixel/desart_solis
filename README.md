@@ -18,11 +18,37 @@ Next.js 16 (App Router) + Sanity Studio, with WhatsApp as the checkout channel.
 ```bash
 pnpm install
 pnpm dev          # http://localhost:3000
-pnpm studio       # Sanity Studio → https://desart-solis.sanity.studio
+pnpm studio       # Sanity Studio locally → http://localhost:3333
 pnpm build        # production build
 pnpm lint         # eslint
 pnpm typegen      # regenerate sanity.types.ts from the Studio schema
 ```
+
+## The admin page
+
+`/admin` mounts Sanity Studio inside the Next.js app (`app/admin/[[...tool]]/page.tsx` via
+`next-sanity/studio`). It edits every document type in the content model below: products,
+packs, reviews, FAQs and site settings.
+
+Authentication is Sanity's own. You sign in with a Sanity account that is a member of the
+Desart Solis project, and Sanity enforces that member's role on every read and write. There
+is no separate admin password in the app. Sanity does not expose a public OAuth provider for
+third-party apps, so a custom admin UI could not be gated by project membership — mounting
+the Studio is the supported approach.
+
+The configuration is shared: `sanity.config.ts` mounts the same schema and desk structure as
+`studio/sanity.config.ts`. The standalone Studio remains available too:
+
+- Hosted: <https://desart-solis.sanity.studio> — deploy from `studio/` with `pnpm studio:deploy`
+- Local: `pnpm studio` → <http://localhost:3333>
+
+When the schema changes, restart `pnpm dev` or redeploy the Next.js app so the embedded
+Studio picks up the new schema. `pnpm studio:deploy` still updates the hosted Studio.
+
+The origin that serves `/admin` must be listed in the project's CORS origins with credentials
+enabled (Sanity → project → API → CORS). The local Studio, `http://localhost:3000`, and the
+production origins (`https://desartsolis.vercel.app`, `https://desartbarber.shop` and
+`https://www.desartbarber.shop`) are already configured.
 
 Copy `.env.example` to `.env.local` and fill in the values:
 
@@ -49,15 +75,17 @@ Products are cached through `sanity/live.ts` and revalidated automatically when 
 
 ```
 app/
+  (site)/         storefront route group (home page + <SanityLive />)
+  admin/          Sanity Studio mounted at /admin
   _components/   cart, order builder, reviews widget, mobile nav, snap rail
   _data.ts       static brand copy (ritual, ingredients, promises, values)
   _lib/          catalogue fetching, shared types, rate limiting
   api/           review submission endpoints
-  page.tsx       landing page composition
   globals.css    design tokens + brand utilities
 public/brand/    logo lockups, product cutouts, editorial photography
 sanity/          client, live cache, GROQ queries
-studio/          Sanity Studio (schema types, structure)
+sanity.config.ts Studio configuration mounted at /admin
+studio/          standalone Studio (schema types, structure, CLI config)
 scripts/         content migrations + the hero range builder
 ```
 

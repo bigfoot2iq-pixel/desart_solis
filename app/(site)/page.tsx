@@ -1,13 +1,13 @@
 import Image from "next/image";
-import { AddToOrderButton, CartProvider, OrderBar } from "./_components/cart";
-import { CartIndicator } from "./_components/cart-indicator";
-import { MobileNav, type NavItem } from "./_components/mobile-nav";
-import { OrderBuilder } from "./_components/order-builder";
-import { SnapRail } from "./_components/snap-rail";
-import { ReviewsWidget } from "./_components/reviews";
-import { formatDh, promises, ritual, values, whatsappLink } from "./_data";
-import { getHomeContent } from "./_lib/catalog";
-import type { Faq as FaqItem, Product, Review, Settings } from "./_lib/types";
+import { AddToOrderButton, CartProvider, OrderBar } from "../_components/cart";
+import { CartIndicator } from "../_components/cart-indicator";
+import { MobileNav, type NavItem } from "../_components/mobile-nav";
+import { OrderBuilder } from "../_components/order-builder";
+import { SnapRail } from "../_components/snap-rail";
+import { ReviewsWidget } from "../_components/reviews";
+import { formatDh, promises, ritual, values, whatsappLink } from "../_data";
+import { getHomeContent } from "../_lib/catalog";
+import type { Faq as FaqItem, Product, Review, Settings } from "../_lib/types";
 
 const nav: NavItem[] = [
   { href: "#produits", label: "Produits" },
