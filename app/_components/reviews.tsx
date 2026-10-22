@@ -8,8 +8,6 @@ import type { Product, Review, ReviewMedia } from "../_lib/types";
 const PAGE_SIZE = 6;
 const VOTES_KEY = "desart-review-votes-v2";
 const MAX_FILES = 4;
-/** How many customer photos & videos the teaser strip shows at most. */
-const MAX_MEDIA_STRIP = 12;
 /** Hosting platforms cap request bodies around 4.5 MB */
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 /** The formats the review endpoint accepts — the picker and the check must agree. */
@@ -205,123 +203,59 @@ export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: 
   const resetPaging = () => setVisible(PAGE_SIZE);
 
   return (
-    <div className="mt-14 lg:mt-16">
-      {/* Summary header */}
-      <div className="grain relative grid gap-10 overflow-hidden rounded-[1.75rem] bg-forest p-7 text-cream sm:p-10 lg:grid-cols-[auto_1fr_auto] lg:items-center lg:gap-14">
-        <div className="text-center lg:border-r lg:border-cream/15 lg:pr-14 lg:text-left">
-          {stats.total > 0 ? (
-            <>
-              <p className="font-serif text-7xl leading-none font-light text-cream">{stats.avg.toFixed(1)}</p>
-              <Stars rating={stats.avg} className="mt-3 justify-center lg:justify-start" size="size-5" />
-              <p className="mt-2 text-sm text-cream/60">
-                Basé sur{" "}
-                <strong className="font-medium text-cream">
-                  {stats.total} avis
-                </strong>
-              </p>
-              <p className="mt-1 text-xs text-cream/60">{stats.recommend} % recommandent ces produits</p>
-            </>
-          ) : (
-            <>
-              <Stars rating={0} className="justify-center lg:justify-start" size="size-6" />
-              <p className="mt-3 font-serif text-2xl text-cream">Aucun avis pour le moment</p>
-              <p className="mt-1 text-sm text-cream/60">Soyez le premier à partager votre expérience.</p>
-            </>
-          )}
+    <div>
+      {/* ——— Header ———
+          One band, not two. The title and the rating summary share a row, so
+          the section reads as a masthead instead of a title stacked on top of
+          a heavy panel. */}
+      <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between lg:gap-14">
+        <div className="max-w-xl">
+          <p className="eyebrow text-gold-deep">Avis clients</p>
+          <h2 className="display mt-4 text-[clamp(1.9rem,3.6vw,2.85rem)] text-forest">
+            Ils ont adopté <em className="text-foil font-normal">le rituel.</em>
+          </h2>
         </div>
 
-        {stats.total > 0 ? (
-          <ul className="space-y-2">
-            {stats.dist.map(({ star, count }) => {
-              const active = ratingFilter === star;
-              const pct = stats.total ? (count / stats.total) * 100 : 0;
-              return (
-                <li key={star}>
-                  <button
-                    type="button"
-                    disabled={count === 0}
-                    onClick={() => {
-                      setRatingFilter(active ? null : star);
-                      resetPaging();
-                    }}
-                    aria-pressed={active}
-                    aria-label={`Filtrer les avis ${star} étoiles (${count})`}
-                    className={`group flex w-full items-center gap-3 rounded-md px-2 py-1 text-sm transition-colors disabled:cursor-default ${
-                      active ? "bg-cream/10" : "enabled:hover:bg-cream/5"
-                    }`}
-                  >
-                    <Stars rating={star} size="size-3.5" />
-                    <span className="h-2 flex-1 overflow-hidden rounded-full bg-cream/15">
-                      <span className="bg-foil block h-full rounded-full transition-[width] duration-700 ease-soft" style={{ width: `${pct}%` }} />
-                    </span>
-                    <span className="w-6 text-right nums text-cream/65">{count}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          // No reviews yet — show the range that is waiting to be rated.
-          // A scroll rail, not a row: four products at 64px plus the gaps are
-          // wider than a 320px screen, and the overflow would push the whole
-          // page sideways.
-          <ul className="-mx-2 flex min-w-0 items-end gap-3 overflow-x-auto px-2 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:justify-start sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0">
-            {products.map((p) => (
-              <li key={p.slug} className="flex w-16 shrink-0 flex-col items-center gap-3 sm:w-20">
-                <span className="flex h-24 w-full items-end justify-center rounded-xl bg-cream/5">
-                  <Image src={p.image.url} alt="" width={p.image.width} height={p.image.height} sizes="64px" className="h-20 w-auto" />
-                </span>
-                <span className="text-center text-[0.6875rem] leading-tight text-cream/60">{p.name}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:gap-9 lg:justify-end">
+          {stats.total > 0 ? (
+            <div className="flex items-center gap-4">
+              <span className="font-serif text-5xl font-light leading-none text-forest nums">{stats.avg.toFixed(1)}</span>
+              <div>
+                <Stars rating={stats.avg} size="size-4" />
+                <p className="mt-1.5 text-xs text-ink/55">
+                  <span className="font-medium text-forest">{stats.total}</span> avis
+                  <span className="mx-1.5 text-forest/25">·</span>
+                  <span className="font-medium text-forest">{stats.recommend}&nbsp;%</span> recommandent
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="max-w-[15rem] text-sm leading-relaxed text-ink/60">Soyez le premier à partager votre expérience.</p>
+          )}
 
-        <div className="flex flex-col items-center gap-3 lg:items-end">
-          <button
-            type="button"
-            onClick={() => setWriteOpen(true)}
-            className="eyebrow bg-foil w-full rounded-full px-8 py-4 text-forest transition-[filter] duration-300 hover:brightness-110 lg:w-auto"
-          >
-            Écrire un avis
-          </button>
-          <p className="max-w-[14rem] text-center text-xs text-cream/60 lg:text-right">Partagez votre expérience avec la communauté Desart Solis.</p>
+          <div className="flex flex-col items-start gap-2 sm:items-end">
+            <button
+              type="button"
+              onClick={() => setWriteOpen(true)}
+              className="eyebrow bg-foil rounded-full px-7 py-3.5 text-forest transition-[filter] duration-300 hover:brightness-110"
+            >
+              Écrire un avis
+            </button>
+            <p className="max-w-[13rem] text-[0.6875rem] leading-tight text-ink/50 sm:text-right">Chaque avis est vérifié par notre équipe avant publication.</p>
+          </div>
         </div>
       </div>
 
-      {/* Customer media strip */}
-      {allMedia.length > 0 && (
-        <div className="mt-10">
-          <p className="eyebrow text-forest/70">Photos & vidéos clients</p>
-          {/* Capped: the strip is a teaser. Rendering every media item of every
-              review would put hundreds of thumbnails and videos in the page at
-              once, on a phone, over mobile data. */}
-          <div className="-mx-4 mt-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:thin] sm:mx-0 sm:px-0">
-            {allMedia.slice(0, MAX_MEDIA_STRIP).map((m, i) => (
-              <button
-                key={`${m.review.id}-${m.media.key}`}
-                type="button"
-                onClick={() => setLightbox(i)}
-                className="group relative size-28 shrink-0 snap-start overflow-hidden rounded-xl bg-sand sm:size-32"
-                aria-label={`Voir le média de ${m.review.author}`}
-              >
-                <MediaThumb media={m.media} sizes="128px" />
-              </button>
-            ))}
-          </div>
-          {allMedia.length > MAX_MEDIA_STRIP && (
-            <p className="mt-2 text-xs text-ink/65">
-              {allMedia.length} médias au total — tous sont consultables depuis chaque avis.
-            </p>
-          )}
-        </div>
-      )}
+      <span className="rule-gold mt-8 block h-px w-full" aria-hidden />
 
       {stats.total > 0 && (
         <>
-          {/* Toolbar */}
-          <div className="mt-10 flex flex-col gap-4 border-b border-forest/10 pb-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
+          {/* ——— Controls ———
+              Filters, sort and the "clear" action all live on one band. A
+              separate strip of customer media was dropped: the photos and
+              videos already appear inside the reviews that own them. */}
+          <div className="mt-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+            <div className="-mx-4 flex min-w-0 gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0">
               <Chip
                 active={productFilter === null}
                 onClick={() => {
@@ -344,30 +278,56 @@ export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: 
                 </Chip>
               ))}
             </div>
-            <label className="flex shrink-0 items-center gap-2 text-xs text-ink/65">
-              Trier
-              <select
-                value={sort}
-                onChange={(e) => {
-                  setSort(e.target.value as Sort);
-                  resetPaging();
-                }}
-                className="rounded-full border border-forest/15 bg-cream px-4 py-2 text-sm text-forest outline-none focus:border-forest sm:text-xs"
-              >
-                {Object.entries(sortLabels).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </label>
+
+            <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-3">
+              <label className="flex items-center gap-2 text-xs text-ink/55">
+                Note
+                <select
+                  value={ratingFilter ?? ""}
+                  onChange={(e) => {
+                    setRatingFilter(e.target.value ? Number(e.target.value) : null);
+                    resetPaging();
+                  }}
+                  className="rounded-full border border-forest/15 bg-cream-soft px-3.5 py-1.5 text-sm text-forest outline-none transition-colors focus:border-forest sm:text-xs"
+                >
+                  <option value="">Toutes</option>
+                  {stats.dist
+                    .filter((d) => d.count > 0)
+                    .map((d) => (
+                      <option key={d.star} value={d.star}>
+                        {d.star} étoile{d.star > 1 ? "s" : ""} ({d.count})
+                      </option>
+                    ))}
+                </select>
+              </label>
+
+              <label className="flex items-center gap-2 text-xs text-ink/55">
+                Trier
+                <select
+                  value={sort}
+                  onChange={(e) => {
+                    setSort(e.target.value as Sort);
+                    resetPaging();
+                  }}
+                  className="rounded-full border border-forest/15 bg-cream-soft px-3.5 py-1.5 text-sm text-forest outline-none transition-colors focus:border-forest sm:text-xs"
+                >
+                  {Object.entries(sortLabels).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
           </div>
 
-          <div className="mt-4 flex min-h-6 items-center gap-3 text-xs text-ink/65">
-            <span aria-live="polite">
-              {filtered.length} avis{ratingFilter ? ` · ${ratingFilter} étoile${ratingFilter > 1 ? "s" : ""}` : ""}
-            </span>
-            {(ratingFilter || productFilter) && (
+          {/* Only when something is filtered: the default view has nothing to
+              announce. */}
+          {(ratingFilter !== null || productFilter !== null) && (
+            <div className="mt-4 flex items-center gap-3 text-xs text-ink/60">
+              <span className="nums" aria-live="polite">
+                {filtered.length} avis sur {stats.total}
+              </span>
               <button
                 type="button"
                 onClick={() => {
@@ -375,15 +335,19 @@ export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: 
                   setProductFilter(null);
                   resetPaging();
                 }}
-                className="-my-2 px-2 py-2 text-forest underline underline-offset-4"
+                className="-my-2 px-1 py-2 text-forest underline underline-offset-4"
               >
                 Effacer les filtres
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Reviews masonry */}
-          <div className="mt-6 gap-5 sm:columns-2 lg:columns-3">
+          {/* ——— Reviews ———
+              Editorial, not a dashboard: no card chrome, a hairline above
+              each review, two columns on a wide screen. A single review is
+              centred instead, so it reads as a feature quote rather than as
+              half a grid. */}
+          <div className={`mt-10 gap-10 ${filtered.length > 1 ? "sm:columns-2" : "mx-auto max-w-2xl"}`}>
             {filtered.slice(0, visible).map((r) => (
               <ReviewCard key={r.id} review={r} product={productBySlug.get(r.product)} vote={votes[r.id]} onVote={vote} onOpenMedia={openMedia} />
             ))}
@@ -391,7 +355,7 @@ export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: 
           {filtered.length === 0 && <p className="py-16 text-center text-sm text-ink/65">Aucun avis ne correspond à ces filtres.</p>}
 
           {visible < filtered.length && (
-            <div className="mt-8 text-center">
+            <div className="mt-10 text-center">
               <button
                 type="button"
                 onClick={() => setVisible((v) => v + PAGE_SIZE)}
@@ -402,6 +366,20 @@ export function ReviewsWidget({ reviews, products, whatsappNumber }: { reviews: 
             </div>
           )}
         </>
+      )}
+
+      {stats.total === 0 && (
+        <div className="mt-14 border-t border-forest/12 pt-12 text-center">
+          <p className="font-serif text-2xl text-forest">Aucun avis pour le moment</p>
+          <p className="mt-2 text-sm text-ink/60">Soyez le premier à partager votre expérience.</p>
+          <button
+            type="button"
+            onClick={() => setWriteOpen(true)}
+            className="eyebrow mt-7 rounded-full border border-forest px-8 py-3.5 text-forest transition-colors hover:bg-forest hover:text-cream"
+          >
+            Écrire un avis
+          </button>
+        </div>
       )}
 
       <Lightbox items={allMedia} index={lightbox} onChange={setLightbox} productBySlug={productBySlug} />
@@ -426,28 +404,30 @@ function ReviewCard({
   // Add our own counted vote until the server count catches up with it
   const helpful = r.helpful + (vote?.sent && r.helpful === vote.base ? 1 : 0);
   return (
-    <article className="mb-5 break-inside-avoid rounded-2xl border border-forest/10 bg-cream-soft p-6 shadow-[0_1px_2px_rgba(35,49,41,0.04)]">
-      <header className="flex items-start gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-sand font-serif text-base text-forest">{initials(r.author)}</span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <p className="text-sm font-medium text-forest">{r.author}</p>
-            {r.verified && (
-              <span className="inline-flex items-center gap-1 rounded-sm bg-forest px-1.5 py-0.5 text-[0.6875rem] font-medium uppercase tracking-wider text-cream">
-                <VerifiedIcon className="size-2.5" />
-                Acheteur vérifié
-              </span>
-            )}
+    <article className="mb-10 break-inside-avoid border-t border-forest/12 pt-6">
+      <header className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-sand font-serif text-sm text-forest">{initials(r.author)}</span>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <p className="text-sm font-medium text-forest">{r.author}</p>
+              {r.verified && (
+                <span className="inline-flex items-center gap-1 text-[0.6875rem] text-gold-deep">
+                  <VerifiedIcon className="size-2.5" />
+                  Acheteur vérifié
+                </span>
+              )}
+            </div>
+            <p className="mt-0.5 text-xs text-ink/55">
+              {r.city && <>{r.city} · </>}
+              <time dateTime={r.date}>{formatDate(r.date)}</time>
+            </p>
           </div>
-          {r.city && <p className="mt-0.5 text-xs text-ink/65">{r.city}</p>}
         </div>
-        <time dateTime={r.date} className="shrink-0 text-xs text-ink/65">
-          {formatDate(r.date)}
-        </time>
+        <Stars rating={r.rating} size="size-3.5" className="shrink-0" />
       </header>
 
-      <Stars rating={r.rating} size="size-4" className="mt-4" />
-      {r.title && <h3 className="mt-2 text-[0.95rem] font-semibold text-forest">{r.title}</h3>}
+      {r.title && <h3 className="mt-4 font-serif text-xl leading-snug text-forest">{r.title}</h3>}
       <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink/70">{r.body}</p>
 
       {r.media.length > 0 && (
@@ -467,21 +447,23 @@ function ReviewCard({
       )}
 
       {product && (
-        <a href="#produits" className="mt-4 flex items-center gap-2.5 rounded-lg bg-sand/50 px-3 py-2 text-xs text-ink/65 transition-colors hover:bg-sand hover:text-forest">
-          <Image src={product.image.url} alt="" width={product.image.width} height={product.image.height} sizes="20px" className="h-7 w-auto" />
-          <span className="truncate">{product.name}</span>
+        <a href="#produits" className="mt-4 inline-flex items-center gap-2 text-xs text-ink/55 transition-colors hover:text-forest">
+          <span className="border-b border-forest/20 pb-px">{product.name}</span>
+          <span aria-hidden className="text-forest/40">
+            →
+          </span>
         </a>
       )}
 
       {r.reply && (
-        <div className="mt-4 border-l-2 border-gold pl-4">
-          <p className="text-xs font-semibold text-forest">Desart Solis a répondu</p>
+        <div className="mt-5 border-l border-gold pl-4">
+          <p className="text-xs font-medium text-forest">Desart Solis a répondu</p>
           <p className="mt-1 whitespace-pre-line text-xs leading-relaxed text-ink/65">{r.reply}</p>
         </div>
       )}
 
-      <footer className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-forest/10 pt-4 text-xs text-ink/65">
-        <span>Cet avis vous a-t-il été utile ?</span>
+      <footer className="mt-5 flex items-center justify-between gap-3 border-t border-forest/8 pt-3">
+        <span className="text-[0.6875rem] uppercase tracking-[0.18em] text-ink/45">Utile ?</span>
         <div className="flex gap-1">
           <VoteButton active={vote?.dir === "up"} onClick={() => onVote(r, "up")} label={`Utile — ${helpful} vote${helpful > 1 ? "s" : ""}`}>
             <Thumb className="size-3.5" />

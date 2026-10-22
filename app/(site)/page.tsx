@@ -457,20 +457,10 @@ function Story() {
 
 function Reviews({ reviews, products, whatsappNumber }: { reviews: Review[]; products: Product[]; whatsappNumber: string }) {
   return (
-    <section id="avis" className="scroll-mt-24 px-4 py-20 sm:px-8 lg:py-24">
+    <section id="avis" className="scroll-mt-24 px-4 py-16 sm:px-8 lg:py-20">
       <div className="mx-auto max-w-7xl">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
-            <p className="eyebrow text-gold-deep">Avis clients</p>
-            <h2 className="display mt-5 text-[clamp(2rem,4vw,3.25rem)] text-forest">
-              Ils ont adopté <em className="text-foil font-normal">le rituel.</em>
-            </h2>
-          </div>
-          <p className="max-w-sm text-[0.95rem] leading-relaxed text-ink/65">
-            Chaque avis est vérifié par notre équipe avant publication.
-          </p>
-        </div>
-
+        {/* The heading lives inside the widget: the title and the rating
+            summary share one row, which is what keeps the section short. */}
         <ReviewsWidget reviews={reviews} products={products} whatsappNumber={whatsappNumber} />
       </div>
     </section>
