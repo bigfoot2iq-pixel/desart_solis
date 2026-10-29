@@ -184,8 +184,10 @@ function Hero({ pack, products }: { pack: Pack | null; products: Product[] }) {
               <span className="text-[0.85rem] nums text-ink/50 line-through">{formatDh(pricing.full)}</span>
             )}
             <span className="font-serif text-[1.9rem] leading-none nums text-forest">{formatDh(pricing.price)}</span>
+            {/* The fallback keeps the badge red even if the theme token is
+                missing from a cached stylesheet. */}
             {discount > 0 && (
-              <span className="rounded-full bg-sale px-2.5 py-1 text-[0.7rem] font-semibold tracking-[0.06em] text-white">
+              <span className="rounded-full bg-[var(--color-sale,#b42318)] px-2.5 py-1 text-[0.7rem] font-semibold tracking-[0.06em] text-white">
                 −{discount} %
               </span>
             )}
