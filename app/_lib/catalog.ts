@@ -65,6 +65,9 @@ function normalize(data: HOME_QUERY_RESULT) {
     ];
   });
 
+  // The admin choice wins; until one is selected, the first active pack keeps the hero shoppable.
+  const featuredPack = packs.find((pack) => pack.id === s?.featuredPackId) ?? packs[0] ?? null;
+
   const reviews: Review[] = data.reviews.flatMap((r) => {
     if (!r.author || !r.body || !r.rating || !r.product || !r.date) return [];
     const media = (r.media ?? []).flatMap<ReviewMedia>((m) => {
@@ -93,5 +96,5 @@ function normalize(data: HOME_QUERY_RESULT) {
 
   const faqs: Faq[] = data.faqs.flatMap((f) => (f.question && f.answer ? [{ id: f._id, question: f.question, answer: f.answer }] : []));
 
-  return { settings, shipping, products, packs, reviews, faqs };
+  return { settings, shipping, products, packs, featuredPack, reviews, faqs };
 }

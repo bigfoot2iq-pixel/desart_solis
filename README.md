@@ -65,7 +65,7 @@ All catalogue content lives in Sanity; only brand copy and layout live in the re
 | `pack` | a bundle of products with a percentage discount |
 | `review` | customer review with optional photo/video, verified badge, reply, helpful count |
 | `faq` | question / answer pairs |
-| `siteSettings` | WhatsApp number, socials, announcement bar, shipping fees, free-shipping threshold |
+| `siteSettings` | WhatsApp number, socials, announcement bar, shipping fees, free-shipping threshold, featured hero pack |
 
 Categories: `visage`, `cheveux`, `barbe`, `corps`.
 
@@ -86,7 +86,7 @@ public/brand/    logo lockups, product cutouts, editorial photography
 sanity/          client, live cache, GROQ queries
 sanity.config.ts Studio configuration mounted at /admin
 studio/          standalone Studio (schema types, structure, CLI config)
-scripts/         content migrations + the hero range builder
+scripts/         content migrations + image utilities
 ```
 
 ## The range section
@@ -107,8 +107,8 @@ children. The ritual section uses the same rail for its four steps.
 
 The add button becomes a `− qty +` stepper as soon as the product is in the cart.
 
-The bottles are sized from `productShare` in `app/page.tsx` — the same map the
-hero strip uses — so a product never changes size between the two sections.
+The bottles are sized from `productShare` in `app/(site)/page.tsx` — the same map
+the hero strip uses — so a product never changes size between the two sections.
 
 ## The order section
 
@@ -144,34 +144,52 @@ stated under the field, so the closed control only has to confirm the choice.
 1. Upload a transparent cutout (PNG/WebP) as the product image in Studio.
 2. Create the product document: set `name`, `slug`, `price`, `size`, `category`, `availability`.
 3. Optionally set `badge` (e.g. `Nouveau`) — it renders as a gold label above the product.
-4. Add the slug to a `pack` if it belongs to a bundle.
-5. Re-cut the product so it can join the hero range:
+4. Add the product to a `pack` if it belongs to a bundle.
+5. Re-cut the product so it can join the hero pack composition:
 
    ```bash
    python scripts/build-range.py                 # re-cut all four (needs Python 3 + Pillow)
    python scripts/build-range.py new-product.webp # or just the new one
    ```
 
-   Then add it to the `range` array in `app/page.tsx` with its pixel size, and
-   give it a `share` in `productShare` — the part of the strip height it should
-   stand at. The range section reads the same map, so both stay in step.
+   The script writes the trimmed cutout to `public/brand/range/` and records its exact
+   pixel size in `app/_lib/cutouts.json`. The hero reads that manifest, so a new product
+   appears in the pack at the right size without any other change.
+6. To feature a pack in the hero, open **Réglages du site → Accueil → Pack mis en avant**
+   and select it. If a product's proportions need adjusting, add its slug to `productShare`
+   in `app/(site)/page.tsx`.
 
 Product photos are displayed with `object-contain` inside a framed plate on the page cream, so a
 transparent background is required. Editorial photography (used in the story section) lives in `public/brand/`.
 
-### The hero range
+### The featured hero pack
 
-The four products in the hero are composited in the DOM from individual cutouts in
-`public/brand/range/`, not baked into one image. A single raster carries a single aspect
-ratio, so any other viewport crops the range — wide screens slice the tops off the tall
-bottles, narrow ones cut the outer products away. Each cutout is sized from the strip
-height alone (`cqh`), which keeps all four whole and standing on one baseline at every
-width. The cutouts must be trimmed tight or the products drift apart and break the
-baseline; `scripts/build-range.py` does that trimming.
+The hero displays the pack referenced by **Réglages du site → Accueil → Pack mis en avant**.
+Until an admin chooses one, the first active pack is used.
 
-Because the cutouts are transparent they stand straight on the page cream, so there is no
-image edge to seam against the hero. The warm halo behind them fades to zero alpha before
-any edge, and the arch's uprights are masked so they dissolve instead of stopping.
+The layout stays the one the range always had: the headline centred at the top, the
+products standing on one baseline underneath it. Only the content changes — the pack's
+name becomes the headline, the price sits under the description with the original price
+struck through and the discount in red, and the strip shows the pack's products instead of
+the whole catalogue.
+
+A shorter pack is composed taller and closer together, so a two-product bundle reads as one
+set rather than two items standing apart.
+
+The cutouts used here are the **trimmed** ones from `public/brand/range/`, not the raw Sanity
+renders: the renders carry wide transparent margins (the gommage tube is 1045px wide but
+only 633px of product), which would push the bottles apart and break the baseline. A product
+without a cutout falls back to its Sanity image.
+
+**Obtenir le pack** adds one pack to the existing cart and opens the order flow directly at
+the delivery-details step, so there is no need to select it again.
+
+### When the order cannot be sent
+
+Clicking **Commander sur WhatsApp** with an incomplete form does not only print an error
+under the button. The delivery step opens, the block scrolls into view and the first empty
+field takes the focus — the visitor is put in front of the field that needs filling instead
+of hunting for it.
 
 ## Mobile layout
 

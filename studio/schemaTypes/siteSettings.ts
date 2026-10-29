@@ -9,9 +9,19 @@ export const siteSettings = defineType({
   groups: [
     {name: 'contact', title: 'Contact', default: true},
     {name: 'delivery', title: 'Livraison'},
+    {name: 'hero', title: 'Accueil'},
     {name: 'content', title: 'Textes'},
   ],
   fields: [
+    defineField({
+      name: 'featuredPack',
+      title: 'Pack mis en avant',
+      type: 'reference',
+      to: [{type: 'pack'}],
+      group: 'hero',
+      description: 'Pack affiché dans le hero avec ses produits, sa remise et son prix. À défaut, le premier pack actif est utilisé.',
+      options: {filter: 'status == "active"'},
+    }),
     defineField({
       name: 'whatsappNumber',
       title: 'Numéro WhatsApp des commandes',

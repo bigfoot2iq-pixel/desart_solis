@@ -15,12 +15,20 @@
 export declare const internalGroqTypeReferenceTo: unique symbol;
 
 // Source: schema.json
+export type PackReference = {
+  _ref: string;
+  _type: "reference";
+  _weak?: boolean;
+  [internalGroqTypeReferenceTo]?: "pack";
+};
+
 export type SiteSettings = {
   _id: string;
   _type: "siteSettings";
   _createdAt: string;
   _updatedAt: string;
   _rev: string;
+  featuredPack?: PackReference;
   whatsappNumber?: string;
   phoneDisplay?: string;
   instagram?: string;
@@ -269,6 +277,7 @@ export type Geopoint = {
 };
 
 export type AllSanitySchemaTypes =
+  | PackReference
   | SiteSettings
   | Faq
   | ProductReference
@@ -289,9 +298,14 @@ export type AllSanitySchemaTypes =
   | SanityImageAsset
   | Geopoint;
 
+// Source: ../app/sitemap.ts
+// Variable: LAST_UPDATED_QUERY
+// Query: *[_type in ["product", "pack", "review", "faq", "siteSettings"]] | order(_updatedAt desc)[0]._updatedAt
+export type LAST_UPDATED_QUERY_RESULT = string | null;
+
 // Source: ../sanity/queries.ts
 // Variable: HOME_QUERY
-// Query: {  "settings": *[_type == "siteSettings" && _id == "siteSettings"][0]{    whatsappNumber,    phoneDisplay,    instagram,    facebook,    website,    freeShippingFrom,    announcement,    "cities": cities[]{_key, city, fee}  },  "products": *[_type == "product" && availability != "hidden" && defined(slug.current)] | order(sortOrder asc, name asc){    _id,    name,    "slug": slug.current,    category,    tagline,    badge,    description,    size,    price,    notes,    availability,    "image": image{      alt,      "url": asset->url,      "width": asset->metadata.dimensions.width,      "height": asset->metadata.dimensions.height    }  },  "packs": *[    _type == "pack" && status == "active"    && count(products) > 1    && count(products[@->availability == "available"]) == count(products)  ] | order(sortOrder asc){    _id,    name,    description,    badge,    discountPercent,    "items": products[]->slug.current  },  "reviews": *[_type == "review" && defined(product)] | order(submittedAt desc, _createdAt desc)[0...300]{    _id,    author,    city,    "date": submittedAt,    rating,    title,    body,    "product": product->slug.current,    "verified": verification == "verified",    reply,    "helpful": coalesce(helpfulCount, 0),    "media": media[defined(asset)]{      _key,      _type,      "url": asset->url,      "mimeType": asset->mimeType,      "width": asset->metadata.dimensions.width,      "height": asset->metadata.dimensions.height    }  },  "faqs": *[_type == "faq"] | order(sortOrder asc){_id, question, answer}}
+// Query: {  "settings": *[_type == "siteSettings" && _id == "siteSettings"][0]{    whatsappNumber,    phoneDisplay,    instagram,    facebook,    website,    freeShippingFrom,    announcement,    "featuredPackId": featuredPack->_id,    "cities": cities[]{_key, city, fee}  },  "products": *[_type == "product" && availability != "hidden" && defined(slug.current)] | order(sortOrder asc, name asc){    _id,    name,    "slug": slug.current,    category,    tagline,    badge,    description,    size,    price,    notes,    availability,    "image": image{      alt,      "url": asset->url,      "width": asset->metadata.dimensions.width,      "height": asset->metadata.dimensions.height    }  },  "packs": *[    _type == "pack" && status == "active"    && count(products) > 1    && count(products[@->availability == "available"]) == count(products)  ] | order(sortOrder asc){    _id,    name,    description,    badge,    discountPercent,    "items": products[]->slug.current  },  "reviews": *[_type == "review" && defined(product)] | order(submittedAt desc, _createdAt desc)[0...300]{    _id,    author,    city,    "date": submittedAt,    rating,    title,    body,    "product": product->slug.current,    "verified": verification == "verified",    reply,    "helpful": coalesce(helpfulCount, 0),    "media": media[defined(asset)]{      _key,      _type,      "url": asset->url,      "mimeType": asset->mimeType,      "width": asset->metadata.dimensions.width,      "height": asset->metadata.dimensions.height    }  },  "faqs": *[_type == "faq"] | order(sortOrder asc){_id, question, answer}}
 export type HOME_QUERY_RESULT = {
   settings: {
     whatsappNumber: string | null;
@@ -301,6 +315,7 @@ export type HOME_QUERY_RESULT = {
     website: string | null;
     freeShippingFrom: number | null;
     announcement: string | null;
+    featuredPackId: string | null;
     cities: Array<{
       _key: string;
       city: string | null;
@@ -385,7 +400,8 @@ export type REVIEW_EXISTS_QUERY_RESULT = boolean;
 // Query TypeMap
 declare global {
   interface SanityQueries {
-    '{\n  "settings": *[_type == "siteSettings" && _id == "siteSettings"][0]{\n    whatsappNumber,\n    phoneDisplay,\n    instagram,\n    facebook,\n    website,\n    freeShippingFrom,\n    announcement,\n    "cities": cities[]{_key, city, fee}\n  },\n  "products": *[_type == "product" && availability != "hidden" && defined(slug.current)] | order(sortOrder asc, name asc){\n    _id,\n    name,\n    "slug": slug.current,\n    category,\n    tagline,\n    badge,\n    description,\n    size,\n    price,\n    notes,\n    availability,\n    "image": image{\n      alt,\n      "url": asset->url,\n      "width": asset->metadata.dimensions.width,\n      "height": asset->metadata.dimensions.height\n    }\n  },\n  "packs": *[\n    _type == "pack" && status == "active"\n    && count(products) > 1\n    && count(products[@->availability == "available"]) == count(products)\n  ] | order(sortOrder asc){\n    _id,\n    name,\n    description,\n    badge,\n    discountPercent,\n    "items": products[]->slug.current\n  },\n  "reviews": *[_type == "review" && defined(product)] | order(submittedAt desc, _createdAt desc)[0...300]{\n    _id,\n    author,\n    city,\n    "date": submittedAt,\n    rating,\n    title,\n    body,\n    "product": product->slug.current,\n    "verified": verification == "verified",\n    reply,\n    "helpful": coalesce(helpfulCount, 0),\n    "media": media[defined(asset)]{\n      _key,\n      _type,\n      "url": asset->url,\n      "mimeType": asset->mimeType,\n      "width": asset->metadata.dimensions.width,\n      "height": asset->metadata.dimensions.height\n    }\n  },\n  "faqs": *[_type == "faq"] | order(sortOrder asc){_id, question, answer}\n}': HOME_QUERY_RESULT;
+    '*[_type in ["product", "pack", "review", "faq", "siteSettings"]] | order(_updatedAt desc)[0]._updatedAt': LAST_UPDATED_QUERY_RESULT;
+    '{\n  "settings": *[_type == "siteSettings" && _id == "siteSettings"][0]{\n    whatsappNumber,\n    phoneDisplay,\n    instagram,\n    facebook,\n    website,\n    freeShippingFrom,\n    announcement,\n    "featuredPackId": featuredPack->_id,\n    "cities": cities[]{_key, city, fee}\n  },\n  "products": *[_type == "product" && availability != "hidden" && defined(slug.current)] | order(sortOrder asc, name asc){\n    _id,\n    name,\n    "slug": slug.current,\n    category,\n    tagline,\n    badge,\n    description,\n    size,\n    price,\n    notes,\n    availability,\n    "image": image{\n      alt,\n      "url": asset->url,\n      "width": asset->metadata.dimensions.width,\n      "height": asset->metadata.dimensions.height\n    }\n  },\n  "packs": *[\n    _type == "pack" && status == "active"\n    && count(products) > 1\n    && count(products[@->availability == "available"]) == count(products)\n  ] | order(sortOrder asc){\n    _id,\n    name,\n    description,\n    badge,\n    discountPercent,\n    "items": products[]->slug.current\n  },\n  "reviews": *[_type == "review" && defined(product)] | order(submittedAt desc, _createdAt desc)[0...300]{\n    _id,\n    author,\n    city,\n    "date": submittedAt,\n    rating,\n    title,\n    body,\n    "product": product->slug.current,\n    "verified": verification == "verified",\n    reply,\n    "helpful": coalesce(helpfulCount, 0),\n    "media": media[defined(asset)]{\n      _key,\n      _type,\n      "url": asset->url,\n      "mimeType": asset->mimeType,\n      "width": asset->metadata.dimensions.width,\n      "height": asset->metadata.dimensions.height\n    }\n  },\n  "faqs": *[_type == "faq"] | order(sortOrder asc){_id, question, answer}\n}': HOME_QUERY_RESULT;
     '*[_type == "product" && slug.current == $slug && availability != "hidden"][0]._id': PRODUCT_ID_BY_SLUG_QUERY_RESULT;
     'count(*[_type == "review" && _id == $id]) > 0': REVIEW_EXISTS_QUERY_RESULT;
   }

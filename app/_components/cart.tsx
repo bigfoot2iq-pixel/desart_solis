@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { formatDh } from "../_data";
+import { packPrice } from "../_lib/pack";
 import type { Catalog, Pack, Product } from "../_lib/types";
 import { useSectionActive } from "./use-section-active";
 
@@ -36,11 +37,6 @@ type CartContextValue = {
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
-
-export function packPrice(pack: Pack, products: Product[]) {
-  const full = pack.items.reduce((sum, slug) => sum + (products.find((p) => p.slug === slug)?.price ?? 0), 0);
-  return { full, price: Math.round(full * (1 - pack.discount)) };
-}
 
 function toLine(id: string, qty: number, catalog: Catalog): CartLine | null {
   const product = catalog.products.find((p) => p.slug === id);
@@ -115,10 +111,31 @@ export function useCart() {
 
 /** Fired when the visitor asks to go to the order section. */
 export const OPEN_ORDER_EVENT = "desart:open-order";
+export type OrderStep = 1 | 2 | 3;
 
-export function scrollToOrder() {
+export function scrollToOrder(step?: OrderStep) {
   document.getElementById("commande")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  window.dispatchEvent(new Event(OPEN_ORDER_EVENT));
+  window.dispatchEvent(new CustomEvent(OPEN_ORDER_EVENT, { detail: { step } }));
+}
+
+/** Adds the featured pack and takes the visitor straight to delivery details. */
+export function GetPackButton({ pack }: { pack: Pack }) {
+  const { add } = useCart();
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        add(pack.id);
+        scrollToOrder(2);
+      }}
+      aria-label={`Obtenir le pack ${pack.name}`}
+      className="eyebrow inline-flex items-center justify-center gap-3 rounded-full bg-forest px-8 py-4 text-cream transition-colors duration-300 hover:bg-forest-soft"
+    >
+      Obtenir le pack
+      <ArrowIcon className="size-3.5" />
+    </button>
+  );
 }
 
 export function AddToOrderButton({ product }: { product: Product }) {
@@ -207,7 +224,7 @@ export function OrderBar() {
         <span className="whitespace-nowrap">
           {toast} <span className="text-cream/60">ajouté</span>
         </span>
-        <button type="button" onClick={scrollToOrder} className="eyebrow ml-2 py-1.5 text-gold underline-offset-4 hover:underline">
+        <button type="button" onClick={() => scrollToOrder()} className="eyebrow ml-2 py-1.5 text-gold underline-offset-4 hover:underline">
           Commander
         </button>
       </div>
@@ -227,7 +244,7 @@ export function OrderBar() {
             </p>
             <p className="font-serif text-xl nums text-forest">{formatDh(subtotal)}</p>
           </div>
-          <button type="button" onClick={scrollToOrder} className="eyebrow rounded-full bg-forest px-7 py-3.5 text-cream">
+          <button type="button" onClick={() => scrollToOrder()} className="eyebrow rounded-full bg-forest px-7 py-3.5 text-cream">
             Finaliser
           </button>
         </div>
@@ -256,6 +273,14 @@ export function Check({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className} aria-hidden>
       <path d="m5 12.5 4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function ArrowIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={className} aria-hidden>
+      <path d="M4 12h15m0 0-5.5-5.5M19 12l-5.5 5.5" />
     </svg>
   );
 }

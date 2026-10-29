@@ -3,7 +3,8 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { formatDh, whatsappLink } from "../_data";
-import { Check, Minus, OPEN_ORDER_EVENT, Plus, packPrice, useCart } from "./cart";
+import { packPrice } from "../_lib/pack";
+import { Check, Minus, OPEN_ORDER_EVENT, type OrderStep, Plus, useCart } from "./cart";
 import { CityPicker } from "./city-picker";
 import { Field, inputCls } from "./field";
 import { useSectionActive } from "./use-section-active";
@@ -12,6 +13,9 @@ const PHONE_RE = /^(?:\+212|00212|0)[5-7]\d{8}$/;
 
 type Form = { name: string; phone: string; city: string; address: string; code: string; note: string };
 const emptyForm: Form = { name: "", phone: "", city: "", address: "", code: "", note: "" };
+
+/** The delivery fields, in the order they are asked for. */
+type DeliveryField = "name" | "phone" | "city" | "address";
 
 /**
  * The mobile flow. On a phone the order is a guided sequence instead of one
@@ -35,6 +39,15 @@ export function OrderBuilder() {
   /** True while the section is on screen — the mobile action bar lives there. */
   const sectionActive = useSectionActive("commande");
   const railRef = useRef<HTMLDivElement>(null);
+  const deliveryRef = useRef<HTMLDivElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const cityRef = useRef<HTMLDivElement>(null);
+  const addressRef = useRef<HTMLInputElement>(null);
+  /** Which delivery field should take the focus when the hand-off fails. */
+  const deliveryTargetRef = useRef<DeliveryField | null>(null);
+  /** Bumped to ask for the delivery fields to take the focus. */
+  const [focusSignal, setFocusSignal] = useState(0);
 
   const city = shipping.cities.find((c) => c.name === form.city);
   const freeFrom = shipping.freeFrom;
@@ -53,6 +66,15 @@ export function OrderBuilder() {
   const deliveryValid = Object.values(deliveryErrors).every((e) => e === null);
   const itemsError = count === 0 ? "Ajoutez au moins un soin." : null;
   const valid = itemsError === null && deliveryValid;
+
+  /** The first delivery field that still needs an answer, in form order. */
+  function firstEmptyField(): DeliveryField | null {
+    if (deliveryErrors.name) return "name";
+    if (deliveryErrors.phone) return "phone";
+    if (deliveryErrors.city) return "city";
+    if (deliveryErrors.address) return "address";
+    return null;
+  }
 
   function update<K extends keyof Form>(key: K, value: Form[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -87,19 +109,64 @@ export function OrderBuilder() {
     railRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  /**
+   * Points the visitor at the delivery fields and puts the caret in the first
+   * one that still needs an answer.
+   *
+   * A failed hand-off used to only print "Complétez les champs indiqués" under
+   * the button: on a long page the fields are somewhere else, so the visitor
+   * was left looking for them. The step is opened, the block is scrolled into
+   * view and the first empty field takes the focus — the keyboard is already
+   * open on the phone, ready to type.
+   */
+  function focusDelivery() {
+    deliveryTargetRef.current = firstEmptyField();
+    setStep(2);
+    setFocusSignal((n) => n + 1);
+  }
+
+  /* The focus moves after the render: on a phone the delivery step is hidden
+     until it is the active one, so the fields have to be mounted before the
+     browser can scroll to them. */
+  useEffect(() => {
+    if (!focusSignal || step !== 2) return;
+    deliveryRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const target = deliveryTargetRef.current;
+    if (!target) return;
+    /* The city is a `<select>` on a wide screen and a button on a phone; only
+       one of the two is on screen, so the visible one takes the focus. */
+    const city = [...(cityRef.current?.querySelectorAll<HTMLElement>("select, button") ?? [])].find(
+      (el) => el.offsetParent !== null,
+    );
+    const field =
+      target === "name"
+        ? nameRef.current
+        : target === "phone"
+          ? phoneRef.current
+          : target === "city"
+            ? city
+            : addressRef.current;
+    field?.focus({ preventScroll: true });
+  }, [focusSignal, step]);
+
   /* Arriving from the site-wide cart bar opens the step that still needs the
      visitor: the basket if it is empty, the address if it is missing, the
      summary if everything is already filled in. */
   useEffect(() => {
-    function open() {
+    function open(event: Event) {
       /* A confirmation on screen means the last order is done: asking for the
          order section again starts a fresh one. */
       if (sent) {
         setSent(false);
         setTouched(false);
       }
-      setStep(count === 0 ? 1 : deliveryValid ? 3 : 2);
+      const requestedStep = (event as CustomEvent<{ step?: OrderStep }>).detail?.step;
+      setStep(requestedStep ?? (count === 0 ? 1 : deliveryValid ? 3 : 2));
       focusRail();
+      // Desktop shows every step, so jump past the product list as well.
+      if (requestedStep === 2 && window.matchMedia("(min-width: 1024px)").matches) {
+        document.getElementById("livraison")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
     window.addEventListener(OPEN_ORDER_EVENT, open);
     return () => window.removeEventListener(OPEN_ORDER_EVENT, open);
@@ -138,8 +205,12 @@ export function OrderBuilder() {
     setTouched(true);
     if (!valid) {
       // Send the visitor straight to the step that still needs work.
-      setStep(itemsError ? 1 : 2);
-      focusRail();
+      if (itemsError) {
+        setStep(1);
+        focusRail();
+      } else {
+        focusDelivery();
+      }
       return;
     }
     window.open(whatsappLink(whatsappNumber, buildMessage()), "_blank", "noopener,noreferrer");
@@ -504,7 +575,11 @@ export function OrderBuilder() {
           </div>
 
           {/* Step 2 — delivery */}
-          <div className={step === 2 ? "" : "hidden lg:block"}>
+          <div
+            id="livraison"
+            ref={deliveryRef}
+            className={`scroll-mt-28 ${step === 2 ? "" : "hidden lg:block"}`}
+          >
             <Step
               n="2"
               title="Vos coordonnées de livraison"
@@ -515,6 +590,7 @@ export function OrderBuilder() {
                   {(id) => (
                     <input
                       id={id}
+                      ref={nameRef}
                       value={form.name}
                       onChange={(e) => update("name", e.target.value)}
                       autoComplete="name"
@@ -528,6 +604,7 @@ export function OrderBuilder() {
                   {(id) => (
                     <input
                       id={id}
+                      ref={phoneRef}
                       value={form.phone}
                       onChange={(e) => update("phone", e.target.value)}
                       inputMode="tel"
@@ -539,22 +616,25 @@ export function OrderBuilder() {
                 </Field>
                 <Field label="Ville" error={touched ? deliveryErrors.city : null}>
                   {(id, labelId) => (
-                    <CityPicker
-                      id={id}
-                      labelId={labelId}
-                      cities={shipping.cities}
-                      value={form.city}
-                      onChange={(v) => update("city", v)}
-                      error={touched ? deliveryErrors.city : null}
-                      freeFrom={freeFrom}
-                      freeShipping={freeShipping}
-                    />
+                    <div ref={cityRef}>
+                      <CityPicker
+                        id={id}
+                        labelId={labelId}
+                        cities={shipping.cities}
+                        value={form.city}
+                        onChange={(v) => update("city", v)}
+                        error={touched ? deliveryErrors.city : null}
+                        freeFrom={freeFrom}
+                        freeShipping={freeShipping}
+                      />
+                    </div>
                   )}
                 </Field>
                 <Field label="Adresse" error={touched ? deliveryErrors.address : null}>
                   {(id) => (
                     <input
                       id={id}
+                      ref={addressRef}
                       value={form.address}
                       onChange={(e) => update("address", e.target.value)}
                       autoComplete="street-address"

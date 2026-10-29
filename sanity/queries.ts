@@ -9,6 +9,7 @@ export const HOME_QUERY = defineQuery(`{
     website,
     freeShippingFrom,
     announcement,
+    "featuredPackId": featuredPack->_id,
     "cities": cities[]{_key, city, fee}
   },
   "products": *[_type == "product" && availability != "hidden" && defined(slug.current)] | order(sortOrder asc, name asc){

@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { AddToOrderButton, CartProvider, OrderBar } from "../_components/cart";
+import cutoutManifest from "../_lib/cutouts.json";
+import { AddToOrderButton, CartProvider, GetPackButton, OrderBar } from "../_components/cart";
 import { CartIndicator } from "../_components/cart-indicator";
 import { MobileNav, type NavItem } from "../_components/mobile-nav";
 import { OrderBuilder } from "../_components/order-builder";
@@ -7,7 +8,8 @@ import { SnapRail } from "../_components/snap-rail";
 import { ReviewsWidget } from "../_components/reviews";
 import { formatDh, promises, ritual, values, whatsappLink } from "../_data";
 import { getHomeContent } from "../_lib/catalog";
-import type { Faq as FaqItem, Product, Review, Settings } from "../_lib/types";
+import { packPrice } from "../_lib/pack";
+import type { Faq as FaqItem, Pack, Product, Review, Settings } from "../_lib/types";
 
 const nav: NavItem[] = [
   { href: "#produits", label: "Produits" },
@@ -20,7 +22,7 @@ const nav: NavItem[] = [
 const categoryLabels: Record<string, string> = { visage: "Visage", cheveux: "Cheveux", barbe: "Barbe", corps: "Corps" };
 
 export default async function Home() {
-  const { settings, shipping, products, packs, reviews, faqs } = await getHomeContent();
+  const { settings, shipping, products, packs, featuredPack, reviews, faqs } = await getHomeContent();
   const catalog = { products, packs, shipping, whatsappNumber: settings.whatsappNumber };
 
   return (
@@ -28,7 +30,7 @@ export default async function Home() {
       <AnnouncementBar text={settings.announcement} />
       <Header />
       <main>
-        <Hero />
+        <Hero pack={featuredPack} products={products} />
         <Promises />
         <Products products={products} />
         <Ritual />
@@ -109,11 +111,7 @@ function Header() {
 
 /* ——— Hero ——— */
 
-/* How tall each product stands relative to the tallest one. The product
-   photos are shot at different scales, so the pixel height alone would make
-   the 400 ml pump bottle look like the shortest product on the shelf. These
-   shares reproduce the real pack sizes and are shared by the hero strip and
-   the range grid, so a product never changes size between the two. */
+/* Shared visual scale for the product photography in the hero and range grid. */
 const productShare: Record<string, number> = {
   "face-wash": 0.88,
   gommage: 0.72,
@@ -121,100 +119,165 @@ const productShare: Record<string, number> = {
   serum: 0.78,
 };
 
-/* The range is composed from the four real cutouts instead of one baked band.
-   A single raster can only carry one aspect ratio, so every viewport that did
-   not match it cropped the range: wide screens sliced the tops off the tall
-   bottles, narrow ones cut the outer products away entirely. Composing the
-   cutouts here keeps every product whole at any width - and because they are
-   transparent they stand straight on the page cream, so there is no image
-   edge left to seam against the hero.
+/* The hero composes the pack from the trimmed cutouts, not from the Sanity
+   renders: the renders carry wide transparent margins (the gommage tube is
+   1045px wide but only 633px of product), which pushes the bottles apart and
+   breaks the shared baseline. `scripts/build-range.py` writes the cutouts and
+   their exact sizes (app/_lib/cutouts.json). */
+const cutouts: Record<string, { w: number; h: number }> = cutoutManifest;
 
-   `w`/`h` are the cutout's own pixels; the height comes from `productShare`. */
-const range = [
-  { src: "/brand/range/face-wash.webp", w: 376, h: 1360, slug: "face-wash", name: "Face Wash Miel & B5" },
-  { src: "/brand/range/gommage.webp", w: 632, h: 1315, slug: "gommage", name: "Gommage Visage" },
-  { src: "/brand/range/gel-douche.webp", w: 440, h: 1099, slug: "gel-douche", name: "Gel Douche Caramel" },
-  { src: "/brand/range/serum.webp", w: 480, h: 1491, slug: "serum", name: "Sérum Cheveux & Barbe" },
-];
+function heroAsset(product: Product) {
+  const cut = cutouts[product.slug];
+  if (cut) return { src: `/brand/range/${product.slug}.webp`, w: cut.w, h: cut.h };
+  return { src: product.image.url, w: product.image.width, h: product.image.height };
+}
 
-function Hero() {
+function Hero({ pack, products }: { pack: Pack | null; products: Product[] }) {
+  const heroProducts = pack
+    ? pack.items.flatMap((slug) => {
+        const product = products.find((item) => item.slug === slug);
+        return product ? [product] : [];
+      })
+    : products.slice(0, 4);
+  const pricing = pack ? packPrice(pack, products) : null;
+  const discount = pack ? Math.round(pack.discount * 100) : 0;
+
   return (
     <section id="hero" className="relative isolate overflow-hidden">
       {/* Moorish arch — the brand's core motif, kept as a whisper */}
       <div
-        className="arch-fade pointer-events-none absolute left-1/2 top-4 hidden h-[20rem] w-[42rem] -translate-x-1/2 rounded-t-full border-x border-t border-forest/10 lg:block"
+        className="arch-fade pointer-events-none absolute left-1/2 top-4 hidden h-[21rem] w-[42rem] -translate-x-1/2 rounded-t-full border-x border-t border-forest/10 lg:block"
         aria-hidden
       />
 
-      <div className="relative mx-auto max-w-3xl px-4 pt-8 text-center sm:px-8 lg:pt-10">
-        <p className="eyebrow text-gold-deep">Skin · Hair · Care</p>
+      <div className="relative mx-auto max-w-3xl px-4 pt-9 text-center sm:px-8 lg:pt-12">
+        <p className="eyebrow text-gold-deep">{pack ? (pack.badge ?? "Pack en vedette") : "Skin · Hair · Care"}</p>
 
-        <h1 className="display mt-3.5 text-[clamp(2.25rem,4.6vw,3.25rem)] text-forest">
-          L’éclat du désert,
-          <br />
-          <em className="text-foil font-normal">dans chaque geste.</em>
+        <h1 className="display mt-3.5 text-[clamp(2.15rem,4.6vw,3.25rem)] text-forest">
+          {pack ? (
+            pack.name
+          ) : (
+            <>
+              L’éclat du désert,
+              <br />
+              <em className="text-foil font-normal">dans chaque geste.</em>
+            </>
+          )}
         </h1>
 
-        <p className="mx-auto mt-3.5 max-w-xl text-[0.9rem] leading-relaxed text-ink/65 sm:text-[0.95rem]">
-          Quatre soins essentiels pour le visage, le corps, les cheveux et la barbe, formulés autour de l’huile d’argan
-          du Maroc. Peu de produits, bien choisis.
+        {pack && (
+          <p className="mt-2.5 font-serif text-[1.05rem] italic text-gold-deep sm:text-[1.2rem]">
+            L’éclat du désert, dans chaque geste.
+          </p>
+        )}
+
+        <p className="mx-auto mt-3 max-w-xl text-[0.9rem] leading-relaxed text-ink/65 sm:text-[0.95rem]">
+          {pack
+            ? pack.description || heroProducts.map((product) => product.name).join(" + ")
+            : "Des soins essentiels pour le visage, le corps, les cheveux et la barbe, formulés autour de l’huile d’argan du Maroc. Peu de produits, bien choisis."}
         </p>
 
-        <div className="mt-6 flex flex-col items-center justify-center gap-1 sm:flex-row sm:gap-7">
+        {/* The price, the price it replaces, and the discount. */}
+        {pack && pricing && (
+          <p className="mt-4 flex flex-wrap items-baseline justify-center gap-x-2.5 gap-y-1">
+            {discount > 0 && (
+              <span className="text-[0.85rem] nums text-ink/50 line-through">{formatDh(pricing.full)}</span>
+            )}
+            <span className="font-serif text-[1.9rem] leading-none nums text-forest">{formatDh(pricing.price)}</span>
+            {discount > 0 && (
+              <span className="rounded-full bg-sale px-2.5 py-1 text-[0.7rem] font-semibold tracking-[0.06em] text-white">
+                −{discount} %
+              </span>
+            )}
+          </p>
+        )}
+
+        <div className="mt-6 flex flex-col items-center justify-center gap-2 sm:flex-row sm:gap-6">
+          {pack ? (
+            <GetPackButton pack={pack} />
+          ) : (
+            <a
+              href="#produits"
+              className="eyebrow rounded-full bg-forest px-8 py-3.5 text-center text-cream transition-colors duration-300 hover:bg-forest-soft"
+            >
+              Découvrir la gamme
+            </a>
+          )}
           <a
             href="#produits"
-            className="eyebrow rounded-full bg-forest px-8 py-3.5 text-center text-cream transition-colors duration-300 hover:bg-forest-soft"
+            className="eyebrow group inline-flex items-center justify-center gap-3 py-3.5 text-forest"
           >
             Découvrir la gamme
-          </a>
-          <a href="#rituel" className="eyebrow group inline-flex items-center justify-center gap-3 py-3.5 text-forest">
-            Le rituel
             <span className="h-px w-8 bg-gold transition-all duration-500 ease-soft group-hover:w-14" />
           </a>
         </div>
       </div>
 
-      <HeroRange />
+      <HeroRange products={heroProducts} />
     </section>
   );
 }
 
-/* The four products standing on one line. Each is sized from the strip height
-   alone (cqh), so nothing can be cropped and the baseline holds at every
-   breakpoint. The halo behind them is fully contained inside the strip and
-   fades to zero alpha well before any edge, so it never leaves a seam. */
-function HeroRange() {
+/* The pack, standing on one baseline under the headline — the way the range
+   used to read, but with the products of the featured pack instead of the
+   whole catalogue.
+
+   A shorter pack is composed taller and closer together, so a two-product
+   bundle reads as one set rather than two items standing apart. */
+function HeroRange({ products }: { products: Product[] }) {
+  if (products.length === 0) return null;
+
+  const height =
+    products.length >= 4
+      ? "h-[190px] sm:h-[220px] lg:h-[clamp(240px,19vw,300px)]"
+      : products.length === 3
+        ? "h-[215px] sm:h-[265px] lg:h-[clamp(285px,23vw,355px)]"
+        : "h-[240px] sm:h-[300px] lg:h-[clamp(340px,28vw,430px)]";
+
+  const gap =
+    products.length >= 4
+      ? "gap-x-5 sm:gap-x-8 lg:gap-x-[clamp(28px,3vw,48px)]"
+      : products.length === 3
+        ? "gap-x-8 sm:gap-x-12 lg:gap-x-[clamp(40px,4vw,72px)]"
+        : "gap-x-6 sm:gap-x-9 lg:gap-x-[clamp(28px,3vw,52px)]";
+
   return (
-    <div className="relative mt-5 pb-6 lg:mt-6">
+    <div className="relative mt-3 pb-6 lg:mt-4">
       <div
-        className="hero-strip relative flex h-[200px] items-end justify-center gap-x-3.5 pb-2 sm:h-[220px] sm:gap-x-6 lg:h-[clamp(240px,19vw,300px)] lg:gap-x-[clamp(24px,2.6vw,44px)]"
+        className={`hero-strip relative flex items-end justify-center pb-2 ${height} ${gap}`}
         role="img"
-        aria-label={`Les quatre soins Desart Solis : ${range.map((p) => p.name).join(", ")}.`}
+        aria-label={`${products.map((product) => product.name).join(", ")}.`}
       >
         <div className="hero-glow pointer-events-none absolute inset-0" aria-hidden />
 
-        {range.map((p, i) => (
-          <div
-            key={p.src}
-            className="relative shrink-0"
-            style={{ height: `${(productShare[p.slug] ?? 1) * 100}%`, width: `${(((productShare[p.slug] ?? 1) * p.w) / p.h) * 100}cqh` }}
-          >
-            {/* contact shadow so the product sits on the floor instead of floating */}
-            <span
-              className="product-shadow absolute bottom-0 left-1/2 h-[12%] w-[260%] -translate-x-1/2 translate-y-[45%]"
-              aria-hidden
-            />
-            <Image
-              src={p.src}
-              alt=""
-              fill
-              sizes="(min-width: 1024px) 108px, (min-width: 640px) 82px, 76px"
-              className="object-contain"
-              loading="eager"
-              fetchPriority={i === 0 ? "high" : "auto"}
-            />
-          </div>
-        ))}
+        {products.map((product, i) => {
+          const share = productShare[product.slug] ?? 1;
+          const asset = heroAsset(product);
+          return (
+            <div
+              key={product.id}
+              className="relative shrink-0"
+              style={{
+                height: `${share * 100}%`,
+                width: `${((share * asset.w) / asset.h) * 100}cqh`,
+              }}
+            >
+              <span
+                className="product-shadow absolute bottom-0 left-1/2 h-[12%] w-[260%] -translate-x-1/2 translate-y-[45%]"
+                aria-hidden
+              />
+              <Image
+                src={asset.src}
+                alt=""
+                fill
+                sizes="(min-width: 1024px) 170px, (min-width: 640px) 130px, 100px"
+                className="object-contain"
+                loading="eager"
+                fetchPriority={i === 0 ? "high" : "auto"}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

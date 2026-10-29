@@ -23,12 +23,17 @@ Output (alpha preserved, written next to the sources):
     public/brand/range/gel-douche.webp
     public/brand/range/serum.webp
 
+It also writes the trimmed sizes to app/_lib/cutouts.json, so the app knows
+the real pixel size of each cutout and can lay the products out on one
+baseline without guessing.
+
 To re-cut a single file, or to cut a new product:
 
     python scripts/build-range.py gommage.webp
     python scripts/build-range.py new-product.webp
 """
 
+import json
 import os
 import sys
 
@@ -37,6 +42,7 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BRAND = os.path.join(ROOT, "public", "brand")
 OUT = os.path.join(BRAND, "range")
+MANIFEST = os.path.join(ROOT, "app", "_lib", "cutouts.json")
 
 # The four products that make up the hero range, in display order.
 DEFAULT_SOURCES = [
@@ -64,13 +70,27 @@ def trim(im: Image.Image) -> Image.Image:
 def main(argv: list[str]) -> None:
     os.makedirs(OUT, exist_ok=True)
 
+    # The manifest keeps the sizes of the cutouts that were not re-cut this
+    # run, so cutting a single product does not drop the others.
+    sizes = {}
+    if os.path.exists(MANIFEST):
+        with open(MANIFEST, encoding="utf-8") as fh:
+            sizes = json.load(fh)
+
     for src_name in argv or DEFAULT_SOURCES:
         im = Image.open(os.path.join(BRAND, src_name)).convert("RGBA")
         trimmed = trim(im)
-        dest = os.path.join(OUT, os.path.splitext(src_name)[0] + ".webp")
+        slug = os.path.splitext(src_name)[0]
+        dest = os.path.join(OUT, slug + ".webp")
         trimmed.save(dest, "WEBP", quality=92, method=6)
         w, h = trimmed.size
+        sizes[slug] = {"w": w, "h": h}
         print(f"{os.path.basename(dest):<18} {w:>5} x {h:<5} aspect {w / h:.4f}")
+
+    with open(MANIFEST, "w", encoding="utf-8") as fh:
+        json.dump(dict(sorted(sizes.items())), fh, indent=2)
+        fh.write("\n")
+    print(f"manifest written to {os.path.relpath(MANIFEST, ROOT)}")
 
 
 if __name__ == "__main__":

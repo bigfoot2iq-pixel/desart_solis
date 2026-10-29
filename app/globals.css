@@ -12,6 +12,9 @@
   --color-gold: #ceaf6f;
   --color-gold-deep: #806224;
   --color-ink: #1c2420;
+  /* Sale red — the one loud colour in the palette, reserved for the
+     promotional badge so a discount reads as a discount. */
+  --color-sale: #b42318;
 
   --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
   --font-sans: var(--font-montserrat), "Montserrat", system-ui, sans-serif;
@@ -115,8 +118,8 @@
 }
 
 /* Hero range strip — a size container, so each product can be sized from the
-   strip height alone (cqh). That is what keeps the four bottles standing on
-   one baseline at every viewport without baking them into a single raster. */
+   strip height alone (cqh). That is what keeps the bottles standing on one
+   baseline at every viewport without baking them into a single raster. */
 @utility hero-strip {
   container-type: size;
 }
